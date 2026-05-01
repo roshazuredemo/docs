@@ -1,0 +1,65 @@
+# UP Framework v5.1.3 on AKS — Pre-Design Discussion
+
+| | |
+|---|---|
+| **Session** | 30-minute working session |
+| **Date / time** | _TBC_ |
+| **Chair** | Cluster design lead |
+| **Pre-read** | Part 00 — Pre-Design Discussion Brief |
+
+## Objective
+
+Lock the cluster-level design decisions for landing UP Framework v5.1.3 on AKS, before Part 01 (Architecture & Maturity) goes to draft. We leave the meeting with **twelve locked decisions**, **three escalation lists** with named owners, and a **pre-filled Day 0 / 1 / 2 RACI**.
+
+## In scope
+
+- Cluster topology and environment separation
+- Networking, identity, RBAC, and tooling stack
+- Pipeline and deployment identity
+- Policy & cyber gates — Bank Azure Policy initiative, CIS AKS Benchmark, admission
+- Day 0 / Day 1 / Day 2 ownership
+
+## Out of scope (today)
+
+Chart-by-chart UP-FW deployment, operator install order, detailed NetworkPolicy YAML, capacity model, cost model, DR drill plan.
+
+## Agenda
+
+| # | Time | Topic | Outcome |
+|---|------|-------|---------|
+| 01 | 00:00 – 02:00 | Discussion objective & scope | Confirm in-scope vs deferred |
+| 02 | 02:00 – 05:00 | Cluster topology — Dev / NP / Prod | Lock 3-cluster model |
+| 03 | 05:00 – 08:00 | Environment separation inside NP | Lock namespace-tenancy approach |
+| 04 | 08:00 – 11:00 | Networking & connectivity baseline | Lock CNI mode & ingress option |
+| 05 | 11:00 – 14:00 | Identity, RBAC, PIM & Workload Identity | Lock Azure-RBAC-for-K8s + PIM model |
+| 06 | 14:00 – 17:00 | Tooling stack — Vault, Venafi, Istio, Prom/ELK, Splunk/Dynatrace, RabbitMQ | Confirm vendor-aligned stack |
+| 07 | 17:00 – 20:00 | Pipeline & deployment identity | Lock OIDC federation + 2-SPN/env pattern |
+| 08 | 20:00 – 23:00 | Policy scope — Bank initiative + CIS AKS + PSA + admission | Identify cyber-blocking items |
+| 09 | 23:00 – 26:00 | Day 0 / Day 1 / Day 2 ownership | Pre-fill RACI |
+| 10 | 26:00 – 30:00 | Parking lot — Microsoft / Cyber / ACI vendor questions | Three named lists with owners and target dates |
+
+## Outputs
+
+1. **Twelve locked decisions** — captured in the Decisions Register
+2. **Three parking-lot streams** with named owners — Microsoft, Cyber, ACI vendor — plus internal items
+3. **Pre-filled Day 0 / 1 / 2 RACI** — confirmed by team owners
+4. **Trigger to begin Part 01** — Architecture & Maturity
+
+## Attendees
+
+- Cluster design lead — _chair_
+- Platform team representative
+- App / UP-FW deployment lead
+- SRE on-call lead
+- Cyber liaison (or async sign-off)
+- Landing Zone networking contact — _optional, for slot 04_
+
+## Facilitator notes
+
+> Slots 04 and 05 will overrun if we re-litigate Landing Zone constraints. Anchor those slots on the capability the cluster needs to expose, not on the LZ networking model.
+
+> If a topic does not land its outcome inside its slot, it goes to a one-page follow-up — not a re-debate.
+
+---
+
+_Companion artifacts (in project): Part 00 Pre-Design Discussion Brief · Parking Lot Tracker · Parts 01–03 Design Series_
