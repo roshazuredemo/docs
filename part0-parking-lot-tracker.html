@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UP Framework v5.1.3 on AKS — Parking Lot Tracker</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Fraunces', 'Georgia', 'serif'],
+          sans: ['Geist', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root {
+    --ink:        #0A1628;
+    --ink-soft:   #1E2A44;
+    --paper:      #F8F6F0;
+    --paper-soft: #EFEBDF;
+    --blue-deep:  #1E3A8A;
+    --blue:       #2563EB;
+    --blue-mid:   #3B82F6;
+    --blue-bright:#60A5FA;
+    --blue-pale:  #DBEAFE;
+    --rule:       #D6CFB8;
+    --rule-soft:  #E8E3D2;
+    --muted:      #6B6B6B;
+    --warn:       #B45309;
+    --warn-soft:  #FEF3C7;
+    --ok:         #047857;
+    --ok-soft:    #ECFDF5;
+    --danger:     #B91C1C;
+    --danger-soft:#FEE2E2;
+    --vendor:     #047857;
+    --vendor-soft:#ECFDF5;
+    --internal:   #6D28D9;
+    --internal-soft:#EDE9FE;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Geist', system-ui, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .font-display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
+  .font-mono    { font-family: 'JetBrains Mono', monospace; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  }
+
+  .rule-thin  { border-color: var(--rule); }
+  .rule-thick { border-color: var(--ink); }
+
+  .brand-stamp {
+    border: 1.5px solid var(--ink);
+    padding: 0.18rem 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+
+  .chip {
+    display: inline-flex; align-items: center;
+    padding: 0.18rem 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    border: 1px solid var(--rule);
+    background: var(--paper-soft);
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .chip-ms      { background: var(--blue-pale);     color: var(--blue-deep); border-color: var(--blue); }
+  .chip-cyber   { background: var(--warn-soft);     color: var(--warn);      border-color: var(--warn); }
+  .chip-vendor  { background: var(--vendor-soft);   color: var(--vendor);    border-color: var(--vendor); }
+  .chip-internal{ background: var(--internal-soft); color: var(--internal);  border-color: var(--internal); }
+  .chip-ink     { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* Status pills */
+  .pill {
+    display: inline-flex; align-items: center;
+    padding: 0.22rem 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    white-space: nowrap;
+    border: 1px solid;
+  }
+  .pill-open      { background: #fff; color: var(--muted);     border-color: var(--rule); }
+  .pill-asked     { background: var(--blue-pale);   color: var(--blue-deep); border-color: var(--blue); }
+  .pill-awaiting  { background: var(--warn-soft);   color: var(--warn);      border-color: var(--warn); }
+  .pill-answered  { background: var(--ok-soft);     color: var(--ok);        border-color: var(--ok); }
+  .pill-closed    { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* Impact tag */
+  .impact {
+    display: inline-flex; align-items: center;
+    padding: 0.15rem 0.45rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .impact-d0       { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+  .impact-d1       { background: var(--warn-soft);   color: var(--warn);   border-color: var(--warn); }
+  .impact-prod     { background: var(--blue-pale);   color: var(--blue-deep); border-color: var(--blue-deep); }
+  .impact-parallel { background: var(--paper-soft);  color: var(--ink-soft); border-color: var(--rule); }
+
+  /* KPI cards */
+  .kpi {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    padding: 1.25rem 1.4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-num {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 300;
+    font-size: 3.2rem;
+    line-height: 0.95;
+    color: var(--ink);
+  }
+  .kpi-num em { font-style: italic; color: var(--blue-deep); }
+  .kpi-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .kpi-bar {
+    height: 4px;
+    background: var(--rule-soft);
+    margin-top: 0.8rem;
+    position: relative;
+  }
+  .kpi-bar-fill {
+    height: 100%;
+    background: var(--blue-deep);
+    transition: width 0.4s ease;
+  }
+
+  /* Filter buttons */
+  .filt-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .filt-btn:hover { border-color: var(--ink); }
+  .filt-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .filt-btn .count {
+    font-size: 0.6rem;
+    opacity: 0.7;
+    margin-left: 0.3rem;
+  }
+
+  /* Action button */
+  .act-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .act-btn:hover { background: var(--ink); color: var(--paper); }
+  .act-btn-primary { background: var(--ink); color: var(--paper); }
+  .act-btn-primary:hover { background: var(--blue-deep); border-color: var(--blue-deep); }
+
+  /* Table */
+  .ptable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+  }
+  .ptable thead th {
+    background: var(--paper-soft);
+    border-top: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding: 0.7rem 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    text-align: left;
+    color: var(--ink);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .ptable tbody tr {
+    border-bottom: 1px solid var(--rule-soft);
+    transition: background 0.1s;
+  }
+  .ptable tbody tr:hover { background: var(--paper-soft); }
+  .ptable tbody td {
+    padding: 0.85rem 0.7rem;
+    vertical-align: top;
+  }
+  .ptable td.id-col {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--blue-deep);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .ptable td.q-col { line-height: 1.45; }
+
+  /* Inline editable */
+  .editable {
+    font-family: 'Geist', system-ui, sans-serif;
+    font-size: 0.82rem;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 0.25rem 0.4rem;
+    width: 100%;
+    color: var(--ink);
+    border-radius: 2px;
+    transition: all 0.1s;
+  }
+  .editable:hover  { border-color: var(--rule); background: rgba(255,255,255,0.4); }
+  .editable:focus  { border-color: var(--blue-deep); background: var(--paper); outline: none; }
+  .editable::placeholder { color: var(--muted); font-style: italic; opacity: 0.6; }
+
+  select.editable {
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M0 0l5 6 5-6z' fill='%236B6B6B'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.4rem center;
+    padding-right: 1.3rem;
+  }
+
+  textarea.editable {
+    resize: vertical;
+    min-height: 2.4rem;
+    line-height: 1.45;
+  }
+
+  /* Notes expand */
+  .row-detail {
+    background: var(--paper-soft);
+  }
+  .row-detail td {
+    padding: 1rem 1.4rem 1.2rem !important;
+  }
+  .row-toggle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--blue-deep);
+    cursor: pointer;
+    user-select: none;
+    background: transparent;
+    border: none;
+    padding: 0.2rem 0.4rem;
+  }
+  .row-toggle:hover { text-decoration: underline; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.8rem 1.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    border: 1px solid var(--ink);
+    transition: transform 0.25s ease;
+    z-index: 100;
+    max-width: 90vw;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Mobile cards */
+  .mobile-card {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    padding: 1rem 1.1rem;
+    margin-bottom: 0.7rem;
+  }
+  .mobile-card .mc-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.7rem;
+  }
+
+  /* Print */
+  @media print {
+    .no-print { display: none !important; }
+    body::before { display: none; }
+    body { background: white; }
+    .ptable td, .ptable th { font-size: 9pt; padding: 0.4rem; }
+    .editable { border: none !important; padding: 0 !important; background: transparent !important; }
+    .row-detail { display: table-row !important; }
+  }
+</style>
+</head>
+<body class="relative">
+
+<!-- ============== TOP HEADER ============== -->
+<header class="border-b-2 rule-thick relative z-10" style="background: var(--paper);">
+  <div class="max-w-[1500px] mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <span class="brand-stamp">UP-FW · v5.1.3</span>
+      <span class="hidden md:inline text-xs font-mono tracking-widest text-[var(--muted)]">PARKING LOT TRACKER · COMPANION TO PART 00</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="hidden lg:inline text-xs font-mono text-[var(--muted)]" id="last-saved">NOT SAVED</span>
+      <button onclick="window.print()" class="no-print text-xs font-mono uppercase tracking-wider px-3 py-1.5 border rule-thick hover:bg-[var(--ink)] hover:text-[var(--paper)] transition">
+        Print
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="relative z-10 border-b rule-thin" style="background: var(--paper);">
+  <div class="max-w-[1500px] mx-auto px-6 lg:px-10 py-12 lg:py-16 grid lg:grid-cols-12 gap-8">
+    <div class="lg:col-span-7">
+      <div class="text-xs font-mono uppercase tracking-[0.2em] text-[var(--blue-deep)] mb-5">
+        Live tracker &nbsp;·&nbsp; companion to the 30-minute discussion
+      </div>
+      <h1 class="font-display font-light text-4xl md:text-5xl lg:text-6xl leading-[0.95] tracking-tight mb-5" style="color: var(--ink);">
+        Forty open<br/>
+        <em class="italic" style="color: var(--blue-deep);">questions</em>, four<br/>
+        owners, one tracker.
+      </h1>
+      <p class="text-base md:text-lg text-[var(--ink-soft)] max-w-xl leading-relaxed mt-4">
+        Every escalation that came out of the pre-design discussion lands here. Edit owner, target date, status
+        and answer notes inline. Filter by stream, by status, or by what's blocking provisioning. Export to
+        JSON to share state, or copy to Markdown to drop into Confluence.
+      </p>
+    </div>
+    <aside class="lg:col-span-5 lg:pl-8 lg:border-l rule-thin">
+      <div class="text-xs font-mono uppercase tracking-[0.2em] text-[var(--muted)] mb-3">How to use it</div>
+      <ol class="text-sm space-y-2 text-[var(--ink-soft)] list-decimal list-inside">
+        <li>Click any cell — owner, date, status, notes — to edit. Changes auto-save in your browser.</li>
+        <li>Use the stream filters to focus on Microsoft / Cyber / Vendor / Internal questions only.</li>
+        <li>Use the impact filters to triage what blocks Day&nbsp;0 vs Day&nbsp;1 vs parallel.</li>
+        <li><strong>Export JSON</strong> to share state with the team. <strong>Import JSON</strong> to merge in their updates.</li>
+        <li><strong>Copy as Markdown</strong> to paste a status table straight into Confluence.</li>
+      </ol>
+      <div class="mt-5 p-3 border rule-thin text-xs text-[var(--ink-soft)]" style="background: var(--paper-soft);">
+        <strong class="font-mono uppercase tracking-wider text-[var(--blue-deep)] text-xs">Note · </strong>
+        State persists in <em>your browser only</em>. Use Export to share. Use Reset to clear.
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============== KPI ROW ============== -->
+<section class="relative z-10" style="background: var(--paper);">
+  <div class="max-w-[1500px] mx-auto px-6 lg:px-10 pt-10">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+      <div class="kpi">
+        <div class="kpi-label">Total items</div>
+        <div class="kpi-num" id="kpi-total">0</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-total-bar" style="width:100%"></div></div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-label">Closed / answered</div>
+        <div class="kpi-num"><em id="kpi-closed">0</em></div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-closed-bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-label">In flight</div>
+        <div class="kpi-num" id="kpi-flight">0</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-flight-bar" style="width:0%; background: var(--warn);"></div></div>
+      </div>
+
+      <div class="kpi" style="background: linear-gradient(135deg, var(--paper) 0%, var(--danger-soft) 240%);">
+        <div class="kpi-label">Blocking Day&nbsp;0 &amp; open</div>
+        <div class="kpi-num" id="kpi-blocking" style="color: var(--danger);">0</div>
+        <div class="kpi-bar"><div class="kpi-bar-fill" id="kpi-blocking-bar" style="width:0%; background: var(--danger);"></div></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============== CONTROLS ============== -->
+<section class="relative z-10 mt-12" style="background: var(--paper);">
+  <div class="max-w-[1500px] mx-auto px-6 lg:px-10">
+
+    <!-- Stream filters -->
+    <div class="mb-4">
+      <div class="text-xs font-mono uppercase tracking-[0.12em] text-[var(--muted)] mb-2">Filter by stream</div>
+      <div class="flex flex-wrap gap-2 no-print">
+        <button class="filt-btn active" data-filter="stream" data-value="ALL">All <span class="count" data-counter="ALL"></span></button>
+        <button class="filt-btn" data-filter="stream" data-value="MS">Microsoft <span class="count" data-counter="MS"></span></button>
+        <button class="filt-btn" data-filter="stream" data-value="CY">Cyber <span class="count" data-counter="CY"></span></button>
+        <button class="filt-btn" data-filter="stream" data-value="AV">ACI vendor <span class="count" data-counter="AV"></span></button>
+        <button class="filt-btn" data-filter="stream" data-value="IN">Internal <span class="count" data-counter="IN"></span></button>
+      </div>
+    </div>
+
+    <!-- Impact + Status filters -->
+    <div class="grid md:grid-cols-2 gap-6 mb-4">
+
+      <div>
+        <div class="text-xs font-mono uppercase tracking-[0.12em] text-[var(--muted)] mb-2">Filter by impact</div>
+        <div class="flex flex-wrap gap-2 no-print">
+          <button class="filt-btn active" data-filter="impact" data-value="ALL">Any</button>
+          <button class="filt-btn" data-filter="impact" data-value="BLOCKS-D0">Blocks Day 0</button>
+          <button class="filt-btn" data-filter="impact" data-value="BLOCKS-D1">Blocks Day 1</button>
+          <button class="filt-btn" data-filter="impact" data-value="BLOCKS-PROD">Blocks Prod</button>
+          <button class="filt-btn" data-filter="impact" data-value="PARALLEL">Parallel</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="text-xs font-mono uppercase tracking-[0.12em] text-[var(--muted)] mb-2">Filter by status</div>
+        <div class="flex flex-wrap gap-2 no-print">
+          <button class="filt-btn active" data-filter="status" data-value="ALL">Any</button>
+          <button class="filt-btn" data-filter="status" data-value="open">Open</button>
+          <button class="filt-btn" data-filter="status" data-value="asked">Asked</button>
+          <button class="filt-btn" data-filter="status" data-value="awaiting">Awaiting</button>
+          <button class="filt-btn" data-filter="status" data-value="answered">Answered</button>
+          <button class="filt-btn" data-filter="status" data-value="closed">Closed</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Search + Actions -->
+    <div class="flex flex-wrap items-center justify-between gap-4 py-4 border-t border-b rule-thin no-print">
+      <div class="flex items-center gap-3 flex-1 min-w-[260px] max-w-[480px]">
+        <span class="text-xs font-mono uppercase tracking-wider text-[var(--muted)]">Search</span>
+        <input id="search-input" type="text" placeholder="question, owner, ID…" class="editable flex-1 border-b border-[var(--rule)]" style="border-radius: 0; padding: 0.4rem 0.5rem;" />
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button id="btn-export" class="act-btn">Export JSON</button>
+        <button id="btn-import" class="act-btn">Import JSON</button>
+        <button id="btn-md"     class="act-btn">Copy Markdown</button>
+        <button id="btn-csv"    class="act-btn">Copy CSV</button>
+        <button id="btn-reset"  class="act-btn" style="border-color: var(--danger); color: var(--danger);">Reset</button>
+        <input id="file-input" type="file" accept=".json,application/json" style="display:none" />
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============== TABLE ============== -->
+<main class="relative z-10 mt-6 mb-16" style="background: var(--paper);">
+  <div class="max-w-[1500px] mx-auto px-6 lg:px-10">
+
+    <div class="hidden md:block overflow-x-auto">
+      <table class="ptable">
+        <thead>
+          <tr>
+            <th style="width: 70px">ID</th>
+            <th style="width: 95px">Stream</th>
+            <th>Question</th>
+            <th style="width: 130px">Owner</th>
+            <th style="width: 120px">Target</th>
+            <th style="width: 110px">Impact</th>
+            <th style="width: 110px">Status</th>
+            <th style="width: 60px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="md:hidden" id="mobile-list"></div>
+
+    <div id="empty" class="hidden border rule-thin p-10 text-center text-sm text-[var(--muted)]" style="background: var(--paper-soft);">
+      No items match the current filters. Try clearing a filter, or click <em>Reset</em> to restore defaults.
+    </div>
+
+  </div>
+</main>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t-2 rule-thick relative z-10" style="background: var(--ink); color: var(--paper);">
+  <div class="max-w-[1500px] mx-auto px-6 lg:px-10 py-10 grid md:grid-cols-3 gap-8 text-sm">
+    <div>
+      <div class="font-display text-2xl mb-2">UP-FW v5.1.3 · AKS Landing</div>
+      <p class="text-xs opacity-70">Parking Lot Tracker · Companion to Part 00 · Internal use only.</p>
+    </div>
+    <div>
+      <div class="font-mono text-xs uppercase tracking-wider opacity-70 mb-2">Document control</div>
+      <ul class="text-xs space-y-1 opacity-90">
+        <li>ID: ADD-AKS-000-PL</li>
+        <li>Revision: Draft 0.1</li>
+        <li>Date: 2026-05-01</li>
+        <li>Owner: Cluster design lead</li>
+      </ul>
+    </div>
+    <div>
+      <div class="font-mono text-xs uppercase tracking-wider opacity-70 mb-2">How state works</div>
+      <p class="text-xs opacity-90">Auto-saved in your browser via localStorage. Export JSON to share state with the team. Import to merge.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ============== TOAST ============== -->
+<div id="toast" class="toast"></div>
+
+<!-- ============== SCRIPT ============== -->
+<script>
+/* =========================================================
+   DATA — initial parking-lot items (40)
+   ========================================================= */
+const SEED = [
+  // --- MICROSOFT (9) ---
+  { id:'MS-01', stream:'MS', impact:'PARALLEL', q:'Latest AKS LTS release vs current GA — what does our subscription tier give us, and what is the patch cadence we should align on?' },
+  { id:'MS-02', stream:'MS', impact:'BLOCKS-D0', q:'Recommended pattern for kubectl-from-on-prem to a private API server over ExpressRoute, without Azure Bastion in the path?' },
+  { id:'MS-03', stream:'MS', impact:'PARALLEL', q:'Defender for Containers — agent footprint, and does it inspect Vault sidecar traffic?' },
+  { id:'MS-04', stream:'MS', impact:'BLOCKS-D0', q:'Workload Identity federation from CloudBees Jenkins — supported subject claim formats? Can we pin folder + pipeline name?' },
+  { id:'MS-05', stream:'MS', impact:'BLOCKS-D0', q:'CMK encryption at rest for AKS — rotation contract, and is HSM-backed CMK supported in our region?' },
+  { id:'MS-06', stream:'MS', impact:'BLOCKS-D0', q:'CNI Overlay subnet sizing — best practice for pod CIDR vs node count growth headroom?' },
+  { id:'MS-07', stream:'MS', impact:'PARALLEL', q:'Image cleaner + Ratify production GA status — long-term path to deprecate Trivy in favour of Defender + Ratify?' },
+  { id:'MS-08', stream:'MS', impact:'BLOCKS-D0', q:'AKS uptime SLA tier — Standard vs Premium — what is the differentiator that matters for our Prod SLO?' },
+  { id:'MS-09', stream:'MS', impact:'PARALLEL', q:'Auto-upgrade channels — `stable` or `node-image` for a regulated bank workload?' },
+
+  // --- CYBER (12) ---
+  { id:'CY-01', stream:'CY', impact:'BLOCKS-D0', q:'Which Azure Policy initiative does the LZ assign to our subscription? Can we add UP-FW deny rules without overriding it?' },
+  { id:'CY-02', stream:'CY', impact:'BLOCKS-D1', q:'Target CIS AKS Benchmark version for cyber sign-off — is Defender for Cloud the source of truth, or do we run kube-bench independently?' },
+  { id:'CY-03', stream:'CY', impact:'BLOCKS-D1', q:'Approved admission controller — does Cyber have a standard between Kyverno and Gatekeeper?' },
+  { id:'CY-04', stream:'CY', impact:'BLOCKS-D1', q:'Approved image scanner — Trivy / ACR Defender / Prisma Cloud / Aqua? Is the SBOM pipeline a separate workstream?' },
+  { id:'CY-05', stream:'CY', impact:'BLOCKS-PROD', q:'Pod Security profile expectations — restricted required in Prod from Day 0, or is baseline acceptable for early stages?' },
+  { id:'CY-06', stream:'CY', impact:'BLOCKS-D0', q:'Egress firewall ownership — Azure Firewall in the hub, or forced-tunnel via on-prem? Who owns the FQDN allow-list per workload?' },
+  { id:'CY-07', stream:'CY', impact:'BLOCKS-D0', q:'Break-glass account model — single shared account or per-cluster? MFA token issuance, monitoring, alerting threshold?' },
+  { id:'CY-08', stream:'CY', impact:'BLOCKS-D1', q:'Audit log destination — does the bank SIEM ingest AKS API server audit logs directly, or via the LZ Activity Log pipeline?' },
+  { id:'CY-09', stream:'CY', impact:'BLOCKS-D0', q:'CMK preference — bank HSM-backed CMK or platform-managed key for AKS / ACR / Storage?' },
+  { id:'CY-10', stream:'CY', impact:'BLOCKS-PROD', q:'Image signing &amp; verification — cosign + Ratify acceptable, or is Notary v2 the mandate?' },
+  { id:'CY-11', stream:'CY', impact:'BLOCKS-D1', q:'PII handling in app logs — what is the redaction expectation for Fluent Bit before logs leave the cluster?' },
+  { id:'CY-12', stream:'CY', impact:'PARALLEL', q:'Penetration test cadence — annual external, quarterly internal, or per-release?' },
+
+  // --- ACI VENDOR (13) ---
+  { id:'AV-01', stream:'AV', impact:'BLOCKS-D0', q:'Supported AKS Kubernetes version range for UP-FW v5.1.3 — is there a tested minor version we should pin?' },
+  { id:'AV-02', stream:'AV', impact:'BLOCKS-D1', q:'Is Istio mandatory, optional, or one of several supported meshes? Linkerd, Cilium service mesh, no mesh?' },
+  { id:'AV-03', stream:'AV', impact:'BLOCKS-D1', q:'Pod Security profile compatibility — does every UP-FW microservice run cleanly under `restricted`, or only `baseline`?' },
+  { id:'AV-04', stream:'AV', impact:'BLOCKS-D1', q:'Container UID / non-root — are all images non-root, or do any require root?' },
+  { id:'AV-05', stream:'AV', impact:'BLOCKS-D1', q:'Required CRDs and operators — full inventory beyond RabbitMQ Cluster Operator?' },
+  { id:'AV-06', stream:'AV', impact:'BLOCKS-D0', q:'Postgres extensions and exact PG version range required by UP-FW?' },
+  { id:'AV-07', stream:'AV', impact:'BLOCKS-D1', q:'TLS termination point — Istio gateway, sidecar, or the application? Is mTLS handled by Istio or app-level?' },
+  { id:'AV-08', stream:'AV', impact:'BLOCKS-D1', q:'Probes contract — startup, readiness, liveness — what does each return and the recommended timeouts?' },
+  { id:'AV-09', stream:'AV', impact:'BLOCKS-D1', q:'Resource requests &amp; limits — sizing matrix per microservice?' },
+  { id:'AV-10', stream:'AV', impact:'BLOCKS-D1', q:'Dependency graph — startup ordering between microservices and the messaging layer?' },
+  { id:'AV-11', stream:'AV', impact:'PARALLEL', q:'Vendor recommended observability — does UP-FW emit OpenTelemetry, Prometheus-native, or both?' },
+  { id:'AV-12', stream:'AV', impact:'PARALLEL', q:'Upgrade path — 5.1.3 → 5.2.x — is there a documented rolling upgrade procedure compatible with Helm?' },
+  { id:'AV-13', stream:'AV', impact:'BLOCKS-D0', q:'Support contract — do you support a private-only AKS deployment with no public egress to vendor diagnostic endpoints?' },
+
+  // --- INTERNAL (6) ---
+  { id:'IN-01', stream:'IN', impact:'BLOCKS-D0', q:'Does the LZ-managed PDNS zone allow programmatic record creation by an AKS-bound identity, or do we file tickets?' },
+  { id:'IN-02', stream:'IN', impact:'BLOCKS-D0', q:'Is the on-prem proxy capacity-sized for AKS image pulls during first cluster bootstrap (before ACR is fully populated)?' },
+  { id:'IN-03', stream:'IN', impact:'BLOCKS-D0', q:'AKS subnet IP plan — confirm with LZ team — sized for one node pool or three?' },
+  { id:'IN-04', stream:'IN', impact:'BLOCKS-D0', q:'CloudBees Core/CD version — does it support OIDC issuance with subject claims that include folder + pipeline?' },
+  { id:'IN-05', stream:'IN', impact:'BLOCKS-D0', q:'Does Cyber accept federated credentials as “keyless,” or do they still require an ITSM-tracked credential record?' },
+  { id:'IN-06', stream:'IN', impact:'BLOCKS-PROD', q:'Prod approval gate — ServiceNow change ticket linkage, or in-CloudBees approver list?' },
+];
+
+/* =========================================================
+   STATE
+   ========================================================= */
+const STORAGE_KEY = 'up-fw-aks-parking-lot-v1';
+const STREAM_LABELS = { MS:'Microsoft', CY:'Cyber', AV:'ACI Vendor', IN:'Internal' };
+const STREAM_CSS    = { MS:'chip-ms',    CY:'chip-cyber', AV:'chip-vendor', IN:'chip-internal' };
+
+let state = {
+  items: [],
+  filters: { stream: 'ALL', impact: 'ALL', status: 'ALL' },
+  search: '',
+  expanded: new Set(),
+};
+
+function defaultItem(seed) {
+  return {
+    id: seed.id,
+    stream: seed.stream,
+    impact: seed.impact,
+    q: seed.q,
+    owner: '',
+    target: '',
+    status: 'open',
+    notes: '',
+    updated: '',
+  };
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // merge: keep order from SEED, retain user-edited fields if present
+      const userById = Object.fromEntries((parsed.items || []).map(i => [i.id, i]));
+      state.items = SEED.map(s => {
+        const u = userById[s.id];
+        return u ? { ...defaultItem(s), ...u, q: s.q, stream: s.stream, impact: s.impact } : defaultItem(s);
+      });
+      // include any extra IDs the user may have added (forward-compat)
+      Object.values(userById).forEach(u => {
+        if (!SEED.find(s => s.id === u.id)) state.items.push(u);
+      });
+      return;
+    }
+  } catch(e) { console.warn('Load failed', e); }
+  state.items = SEED.map(defaultItem);
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: state.items, savedAt: new Date().toISOString() }));
+    const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
+    document.getElementById('last-saved').textContent = `SAVED ${stamp}`;
+  } catch(e) { console.warn('Save failed', e); }
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function visibleItems() {
+  const { stream, impact, status } = state.filters;
+  const q = state.search.trim().toLowerCase();
+  return state.items.filter(it => {
+    if (stream !== 'ALL' && it.stream !== stream) return false;
+    if (impact !== 'ALL' && it.impact !== impact) return false;
+    if (status !== 'ALL' && it.status !== status) return false;
+    if (q) {
+      const hay = `${it.id} ${it.q} ${it.owner} ${it.notes}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function streamChip(s) {
+  return `<span class="chip ${STREAM_CSS[s]}">${STREAM_LABELS[s]}</span>`;
+}
+function impactTag(imp) {
+  const cls = imp === 'BLOCKS-D0' ? 'impact-d0'
+            : imp === 'BLOCKS-D1' ? 'impact-d1'
+            : imp === 'BLOCKS-PROD' ? 'impact-prod'
+            : 'impact-parallel';
+  const label = imp === 'BLOCKS-D0' ? 'Blocks D0'
+              : imp === 'BLOCKS-D1' ? 'Blocks D1'
+              : imp === 'BLOCKS-PROD' ? 'Blocks Prod'
+              : 'Parallel';
+  return `<span class="impact ${cls}">${label}</span>`;
+}
+function statusPill(s) {
+  return `<span class="pill pill-${s}">${s}</span>`;
+}
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+function rowHtml(it) {
+  const expanded = state.expanded.has(it.id);
+  const main = `
+    <tr data-id="${it.id}">
+      <td class="id-col">${it.id}</td>
+      <td>${streamChip(it.stream)}</td>
+      <td class="q-col">${it.q}</td>
+      <td>
+        <input class="editable" data-field="owner" data-id="${it.id}"
+               value="${escapeHtml(it.owner)}" placeholder="unassigned" />
+      </td>
+      <td>
+        <input class="editable" type="date" data-field="target" data-id="${it.id}"
+               value="${escapeHtml(it.target)}" />
+      </td>
+      <td>
+        <select class="editable" data-field="impact" data-id="${it.id}">
+          <option value="BLOCKS-D0"   ${it.impact==='BLOCKS-D0'?'selected':''}>Blocks Day 0</option>
+          <option value="BLOCKS-D1"   ${it.impact==='BLOCKS-D1'?'selected':''}>Blocks Day 1</option>
+          <option value="BLOCKS-PROD" ${it.impact==='BLOCKS-PROD'?'selected':''}>Blocks Prod</option>
+          <option value="PARALLEL"    ${it.impact==='PARALLEL'?'selected':''}>Parallel</option>
+        </select>
+      </td>
+      <td>
+        <select class="editable" data-field="status" data-id="${it.id}">
+          <option value="open"      ${it.status==='open'?'selected':''}>Open</option>
+          <option value="asked"     ${it.status==='asked'?'selected':''}>Asked</option>
+          <option value="awaiting"  ${it.status==='awaiting'?'selected':''}>Awaiting</option>
+          <option value="answered"  ${it.status==='answered'?'selected':''}>Answered</option>
+          <option value="closed"    ${it.status==='closed'?'selected':''}>Closed</option>
+        </select>
+      </td>
+      <td>
+        <button class="row-toggle" data-toggle="${it.id}">${expanded?'− notes':'+ notes'}</button>
+      </td>
+    </tr>`;
+  const detail = expanded ? `
+    <tr class="row-detail" data-detail="${it.id}">
+      <td colspan="8">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Answer / notes — ${it.id}</div>
+        <textarea class="editable" data-field="notes" data-id="${it.id}"
+                  rows="3" placeholder="answer received, references, follow-ups…">${escapeHtml(it.notes)}</textarea>
+        <div class="mt-2 flex justify-between text-xs text-[var(--muted)]">
+          <span>Last updated: <span class="font-mono">${it.updated || '—'}</span></span>
+          <span>Impact: <span class="font-mono">${it.impact}</span></span>
+        </div>
+      </td>
+    </tr>` : '';
+  return main + detail;
+}
+
+function mobileCardHtml(it) {
+  return `
+    <div class="mobile-card" data-id="${it.id}">
+      <div class="mc-head">
+        <span class="text-sm font-mono font-semibold text-[var(--blue-deep)]">${it.id}</span>
+        ${streamChip(it.stream)}
+        ${impactTag(it.impact)}
+      </div>
+      <p class="text-sm text-[var(--ink-soft)] mb-3" style="line-height:1.5">${it.q}</p>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <label class="block">
+          <span class="text-xs font-mono uppercase tracking-wider text-[var(--muted)]">Owner</span>
+          <input class="editable border border-[var(--rule)] mt-1" data-field="owner" data-id="${it.id}" value="${escapeHtml(it.owner)}" placeholder="unassigned" />
+        </label>
+        <label class="block">
+          <span class="text-xs font-mono uppercase tracking-wider text-[var(--muted)]">Target</span>
+          <input class="editable border border-[var(--rule)] mt-1" type="date" data-field="target" data-id="${it.id}" value="${escapeHtml(it.target)}" />
+        </label>
+      </div>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <label class="block">
+          <span class="text-xs font-mono uppercase tracking-wider text-[var(--muted)]">Impact</span>
+          <select class="editable border border-[var(--rule)] mt-1" data-field="impact" data-id="${it.id}">
+            <option value="BLOCKS-D0"   ${it.impact==='BLOCKS-D0'?'selected':''}>Blocks Day 0</option>
+            <option value="BLOCKS-D1"   ${it.impact==='BLOCKS-D1'?'selected':''}>Blocks Day 1</option>
+            <option value="BLOCKS-PROD" ${it.impact==='BLOCKS-PROD'?'selected':''}>Blocks Prod</option>
+            <option value="PARALLEL"    ${it.impact==='PARALLEL'?'selected':''}>Parallel</option>
+          </select>
+        </label>
+        <label class="block">
+          <span class="text-xs font-mono uppercase tracking-wider text-[var(--muted)]">Status</span>
+          <select class="editable border border-[var(--rule)] mt-1" data-field="status" data-id="${it.id}">
+            <option value="open"      ${it.status==='open'?'selected':''}>Open</option>
+            <option value="asked"     ${it.status==='asked'?'selected':''}>Asked</option>
+            <option value="awaiting"  ${it.status==='awaiting'?'selected':''}>Awaiting</option>
+            <option value="answered"  ${it.status==='answered'?'selected':''}>Answered</option>
+            <option value="closed"    ${it.status==='closed'?'selected':''}>Closed</option>
+          </select>
+        </label>
+      </div>
+      <label class="block">
+        <span class="text-xs font-mono uppercase tracking-wider text-[var(--muted)]">Notes / answer</span>
+        <textarea class="editable border border-[var(--rule)] mt-1" data-field="notes" data-id="${it.id}" rows="2" placeholder="answer received, references, follow-ups…">${escapeHtml(it.notes)}</textarea>
+      </label>
+    </div>`;
+}
+
+function render() {
+  const items = visibleItems();
+  const tbody = document.getElementById('tbody');
+  const mobile = document.getElementById('mobile-list');
+  const empty  = document.getElementById('empty');
+
+  if (items.length === 0) {
+    tbody.innerHTML = '';
+    mobile.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    tbody.innerHTML  = items.map(rowHtml).join('');
+    mobile.innerHTML = items.map(mobileCardHtml).join('');
+  }
+
+  // Stats
+  const total    = state.items.length;
+  const closed   = state.items.filter(i => i.status === 'closed' || i.status === 'answered').length;
+  const flight   = state.items.filter(i => i.status === 'asked'  || i.status === 'awaiting').length;
+  const blocking = state.items.filter(i => i.impact === 'BLOCKS-D0' && i.status !== 'closed' && i.status !== 'answered').length;
+
+  document.getElementById('kpi-total').textContent    = total;
+  document.getElementById('kpi-closed').textContent   = closed;
+  document.getElementById('kpi-flight').textContent   = flight;
+  document.getElementById('kpi-blocking').textContent = blocking;
+
+  document.getElementById('kpi-closed-bar').style.width   = total ? (100*closed/total)+'%' : '0%';
+  document.getElementById('kpi-flight-bar').style.width   = total ? (100*flight/total)+'%' : '0%';
+  document.getElementById('kpi-blocking-bar').style.width = total ? (100*blocking/total)+'%' : '0%';
+
+  // Stream counters
+  ['ALL','MS','CY','AV','IN'].forEach(k => {
+    const n = k === 'ALL' ? total : state.items.filter(i => i.stream === k).length;
+    document.querySelectorAll(`[data-counter="${k}"]`).forEach(el => el.textContent = `(${n})`);
+  });
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.classList.contains('editable')) {
+    const id = t.dataset.id, field = t.dataset.field;
+    const it = state.items.find(i => i.id === id);
+    if (!it) return;
+    it[field] = t.value;
+    it.updated = new Date().toISOString().slice(0, 16).replace('T',' ');
+    save();
+    if (field === 'impact' || field === 'status') render();
+  }
+});
+
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'search-input') {
+    state.search = t.value;
+    render();
+    return;
+  }
+  if (t.classList.contains('editable') && (t.dataset.field === 'owner' || t.dataset.field === 'notes' || t.dataset.field === 'target')) {
+    const id = t.dataset.id, field = t.dataset.field;
+    const it = state.items.find(i => i.id === id);
+    if (!it) return;
+    it[field] = t.value;
+    it.updated = new Date().toISOString().slice(0, 16).replace('T',' ');
+    save();
+  }
+});
+
+document.addEventListener('click', e => {
+  const t = e.target;
+
+  // Filter buttons
+  if (t.classList.contains('filt-btn')) {
+    const f = t.dataset.filter, v = t.dataset.value;
+    state.filters[f] = v;
+    document.querySelectorAll(`.filt-btn[data-filter="${f}"]`).forEach(b => b.classList.toggle('active', b === t));
+    render();
+    return;
+  }
+
+  // Toggle notes
+  if (t.dataset.toggle) {
+    const id = t.dataset.toggle;
+    if (state.expanded.has(id)) state.expanded.delete(id); else state.expanded.add(id);
+    render();
+    return;
+  }
+
+  // Actions
+  if (t.id === 'btn-export') doExport();
+  if (t.id === 'btn-import') document.getElementById('file-input').click();
+  if (t.id === 'btn-md')     doMarkdown();
+  if (t.id === 'btn-csv')    doCsv();
+  if (t.id === 'btn-reset')  doReset();
+});
+
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data.items) throw new Error('Missing items[]');
+      // merge: by ID, imported overwrites
+      const byId = Object.fromEntries(state.items.map(i => [i.id, i]));
+      data.items.forEach(u => {
+        if (byId[u.id]) {
+          Object.assign(byId[u.id], { owner: u.owner||'', target: u.target||'', status: u.status||'open',
+                                      notes: u.notes||'', updated: u.updated||'',
+                                      impact: u.impact || byId[u.id].impact });
+        } else {
+          state.items.push({ ...u });
+        }
+      });
+      save(); render();
+      toast(`Imported ${data.items.length} items`);
+    } catch(err) {
+      toast(`Import failed: ${err.message}`);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+function doExport() {
+  const blob = new Blob([JSON.stringify({ items: state.items, exportedAt: new Date().toISOString() }, null, 2)],
+                       { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `up-fw-parking-lot-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast('Exported JSON');
+}
+
+function doMarkdown() {
+  const items = visibleItems();
+  if (items.length === 0) { toast('No items to copy'); return; }
+  const lines = [
+    '| ID | Stream | Question | Owner | Target | Impact | Status | Notes |',
+    '|----|--------|----------|-------|--------|--------|--------|-------|',
+    ...items.map(i => `| ${i.id} | ${STREAM_LABELS[i.stream]} | ${(i.q||'').replace(/\|/g,'\\|').replace(/<[^>]+>/g,'')} | ${i.owner||'—'} | ${i.target||'—'} | ${i.impact} | ${i.status} | ${(i.notes||'').replace(/\|/g,'\\|').replace(/\n/g,' ')||'—'} |`)
+  ];
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(() => toast(`Copied ${items.length} rows as Markdown`))
+    .catch(() => toast('Clipboard blocked — try the Export button'));
+}
+
+function doCsv() {
+  const items = visibleItems();
+  if (items.length === 0) { toast('No items to copy'); return; }
+  const esc = v => `"${String(v||'').replace(/"/g,'""').replace(/<[^>]+>/g,'')}"`;
+  const lines = [
+    ['ID','Stream','Question','Owner','Target','Impact','Status','Notes','Updated'].map(esc).join(','),
+    ...items.map(i => [i.id, STREAM_LABELS[i.stream], i.q, i.owner, i.target, i.impact, i.status, i.notes, i.updated].map(esc).join(','))
+  ];
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(() => toast(`Copied ${items.length} rows as CSV`))
+    .catch(() => toast('Clipboard blocked — try Export'));
+}
+
+function doReset() {
+  if (!confirm('Reset all owner / date / status / notes to defaults? This cannot be undone (unless you exported first).')) return;
+  state.items = SEED.map(defaultItem);
+  save(); render();
+  toast('Reset to defaults');
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+load();
+render();
+</script>
+
+</body>
+</html>
