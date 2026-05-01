@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UP Framework v5.1.3 on AKS — Pre-Design Discussion Brief (Part 00)</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Fraunces', 'Georgia', 'serif'],
+          sans: ['Geist', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  :root {
+    --ink:        #0A1628;
+    --ink-soft:   #1E2A44;
+    --paper:      #F8F6F0;
+    --paper-soft: #EFEBDF;
+    --blue-deep:  #1E3A8A;
+    --blue:       #2563EB;
+    --blue-mid:   #3B82F6;
+    --blue-bright:#60A5FA;
+    --blue-pale:  #DBEAFE;
+    --rule:       #D6CFB8;
+    --rule-soft:  #E8E3D2;
+    --muted:      #6B6B6B;
+    --warn:       #B45309;
+    --warn-soft:  #FEF3C7;
+    --ok:         #047857;
+    --ok-soft:    #ECFDF5;
+    --danger:     #B91C1C;
+    --danger-soft:#FEE2E2;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Geist', system-ui, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .font-display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; }
+  .font-mono    { font-family: 'JetBrains Mono', monospace; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  }
+
+  .rule-thin  { border-color: var(--rule); }
+  .rule-thick { border-color: var(--ink); }
+
+  .section-num {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 300;
+    color: var(--blue-deep);
+    font-style: italic;
+    line-height: 0.85;
+  }
+
+  .chip {
+    display: inline-flex; align-items: center;
+    padding: 0.18rem 0.55rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    border: 1px solid var(--rule);
+    background: var(--paper-soft);
+    color: var(--ink-soft);
+  }
+  .chip-ink   { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip-blue  { background: var(--blue-pale); color: var(--blue-deep); border-color: var(--blue); }
+  .chip-warn  { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+  .chip-ok    { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+  .chip-danger{ background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+
+  .brand-stamp {
+    border: 1.5px solid var(--ink);
+    padding: 0.18rem 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+
+  /* Decision / option cards */
+  .opt-card {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    padding: 1.1rem 1.25rem;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .opt-card:hover { border-color: var(--ink); }
+  .opt-card[data-pick="recommend"] {
+    border-color: var(--blue-deep);
+    border-width: 2px;
+    background: linear-gradient(180deg, var(--paper) 0%, var(--blue-pale) 200%);
+  }
+  .opt-card[data-pick="reject"]    { opacity: 0.7; }
+
+  .pro::before  { content: "+"; color: var(--ok);    font-weight: 700; margin-right: 0.4rem; }
+  .con::before  { content: "−"; color: var(--warn);  font-weight: 700; margin-right: 0.4rem; }
+  .risk::before { content: "!"; color: var(--danger);font-weight: 700; margin-right: 0.4rem; }
+
+  /* Side-nav active state */
+  .nav-link {
+    border-left: 1.5px solid transparent;
+    color: var(--ink-soft);
+    transition: all 0.15s;
+  }
+  .nav-link:hover { color: var(--ink); border-left-color: var(--rule); }
+  .nav-link.active {
+    color: var(--blue-deep);
+    border-left-color: var(--blue);
+    background: var(--paper-soft);
+  }
+
+  /* Drop cap */
+  .drop-cap::first-letter {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 4.2em;
+    line-height: 0.9;
+    float: left;
+    margin: 0.05em 0.12em -0.05em 0;
+    color: var(--blue-deep);
+    font-weight: 400;
+  }
+
+  /* Agenda timeline */
+  .agenda-row {
+    display: grid;
+    grid-template-columns: 60px 90px 1fr 200px;
+    gap: 1rem;
+    align-items: start;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .agenda-row:last-child { border-bottom: 0; }
+  .agenda-num {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-size: 1.6rem;
+    color: var(--blue-deep);
+  }
+  .agenda-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+  .agenda-title  { font-weight: 500; color: var(--ink); }
+  .agenda-outcome{ font-size: 0.78rem; color: var(--ink-soft); font-style: italic; }
+  @media (max-width: 768px) {
+    .agenda-row { grid-template-columns: 40px 1fr; gap: 0.5rem; }
+    .agenda-row .agenda-time, .agenda-row .agenda-outcome { grid-column: 2; }
+  }
+
+  /* Tables */
+  table.matrix { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+  table.matrix th, table.matrix td {
+    border: 1px solid var(--rule);
+    padding: 0.55rem 0.7rem;
+    vertical-align: top;
+    text-align: left;
+  }
+  table.matrix th {
+    background: var(--paper-soft);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    color: var(--ink-soft);
+  }
+  table.matrix tbody tr:nth-child(even) { background: rgba(239,235,223,0.4); }
+
+  /* RACI cells */
+  .raci-r { background: var(--blue-pale); color: var(--blue-deep); font-weight: 600; }
+  .raci-a { background: var(--ink); color: var(--paper); font-weight: 600; }
+  .raci-c { background: var(--paper-soft); color: var(--ink-soft); }
+  .raci-i { background: var(--paper); color: var(--muted); }
+
+  /* Parking-lot card */
+  .pl-card {
+    border-left: 4px solid var(--blue);
+    background: var(--paper);
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.9rem;
+  }
+  .pl-card.cyber  { border-left-color: var(--warn); }
+  .pl-card.vendor { border-left-color: var(--ok); }
+
+  /* Question chips inside PL cards */
+  .q { display:flex; gap:0.5rem; align-items:flex-start; padding:0.35rem 0; }
+  .q::before {
+    content: "?";
+    flex: 0 0 auto;
+    width: 18px; height: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--ink); color: var(--paper);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    border-radius: 50%;
+    margin-top: 2px;
+  }
+
+  /* Print */
+  @media print {
+    .no-print { display: none !important; }
+    body::before { display: none; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body class="relative">
+
+<!-- ============== TOP HEADER ============== -->
+<header class="border-b-2 rule-thick relative z-10" style="background: var(--paper);">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <span class="brand-stamp">UP-FW · v5.1.3</span>
+      <span class="hidden md:inline text-xs font-mono tracking-widest text-[var(--muted)]">PART 00 / 03 — DISCUSSION BRIEF</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="hidden lg:inline text-xs font-mono text-[var(--muted)]">DRAFT 0.1 · 2026-05-01 · INTERNAL</span>
+      <button onclick="window.print()" class="no-print text-xs font-mono uppercase tracking-wider px-3 py-1.5 border rule-thick hover:bg-[var(--ink)] hover:text-[var(--paper)] transition">
+        Print / PDF
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="relative z-10 border-b rule-thin" style="background: var(--paper);">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-14 lg:py-20 grid lg:grid-cols-12 gap-10">
+    <div class="lg:col-span-8">
+      <div class="text-xs font-mono uppercase tracking-[0.2em] text-[var(--blue-deep)] mb-6">
+        Pre-design discussion brief &nbsp;·&nbsp; 30-minute working session
+      </div>
+      <h1 class="font-display font-light text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight mb-6" style="color: var(--ink);">
+        Before we draw the<br/>
+        <em class="italic" style="color: var(--blue-deep);">cluster design</em>,<br/>
+        let's agree the questions.
+      </h1>
+      <p class="text-lg md:text-xl text-[var(--ink-soft)] max-w-2xl leading-relaxed mt-6">
+        A structured agenda for a thirty-minute working session covering cluster-level control, environment
+        separation, RBAC, connectivity, downstream service access, pipeline identity, governance, and the
+        Day&nbsp;0 → Day&nbsp;2 ownership boundary. Every topic carries a short menu of options, a working
+        recommendation, and a small list of items to escalate to <em>Microsoft Support</em>, the
+        <em>internal Cyber team</em>, or the <em>ACI Framework vendor</em>.
+      </p>
+    </div>
+    <aside class="lg:col-span-4 lg:pl-10 lg:border-l rule-thin">
+      <div class="text-xs font-mono uppercase tracking-[0.2em] text-[var(--muted)] mb-3">Outputs of this session</div>
+      <ul class="text-sm space-y-2 text-[var(--ink-soft)]">
+        <li>1. A signed-off <strong>cluster topology</strong> (Dev / NP / Prod, separate clusters)</li>
+        <li>2. A signed-off <strong>environment separation</strong> model (namespace tenancy in NP)</li>
+        <li>3. A list of <strong>locked-in tooling choices</strong></li>
+        <li>4. A <strong>parking lot</strong> with named owners and target dates</li>
+        <li>5. A pre-filled <strong>Day 0 / Day 1 / Day 2 RACI</strong></li>
+      </ul>
+      <div class="mt-6 p-4 border rule-thin" style="background: var(--paper-soft);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-1">What this is not</div>
+        <p class="text-xs text-[var(--ink-soft)]">This is not the design. It is the agenda for the conversation that produces the design (Parts 01–03).</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============== PAGE GRID ============== -->
+<div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-14 grid lg:grid-cols-12 gap-12 relative z-10">
+
+  <!-- ===== SIDE NAV ===== -->
+  <nav class="lg:col-span-3 hidden lg:block">
+    <div class="sticky top-6">
+      <div class="text-xs font-mono uppercase tracking-[0.18em] text-[var(--muted)] mb-4">In this brief</div>
+      <ol class="space-y-2 text-sm">
+        <li><a href="#summary"   class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">00</span>Why this session exists</a></li>
+        <li><a href="#agenda"    class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">01</span>The 30-minute agenda</a></li>
+        <li><a href="#topology"  class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">02</span>Cluster topology</a></li>
+        <li><a href="#envsep"    class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">03</span>Environment separation</a></li>
+        <li><a href="#network"   class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">04</span>Networking &amp; connectivity</a></li>
+        <li><a href="#identity"  class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">05</span>Identity &amp; RBAC</a></li>
+        <li><a href="#tooling"   class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">06</span>Platform tooling stack</a></li>
+        <li><a href="#pipeline"  class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">07</span>Pipeline &amp; deploy identity</a></li>
+        <li><a href="#downstream"class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">08</span>Downstream connectivity</a></li>
+        <li><a href="#policy"    class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">09</span>Policy, CIS &amp; cyber gates</a></li>
+        <li><a href="#raci"      class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">10</span>Day 0 / 1 / 2 RACI</a></li>
+        <li><a href="#parking"   class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">11</span>Parking lot</a></li>
+        <li><a href="#decisions" class="nav-link block py-1.5 pl-3"><span class="font-mono text-xs text-[var(--muted)] mr-2">12</span>Decisions to take today</a></li>
+      </ol>
+
+      <div class="mt-10 pt-6 border-t rule-thin">
+        <div class="text-xs font-mono uppercase tracking-[0.18em] text-[var(--muted)] mb-3">Series</div>
+        <ol class="space-y-2 text-xs">
+          <li class="flex items-start gap-2"><span class="chip chip-ink mt-0.5">00</span><span>Pre-design Discussion Brief</span></li>
+          <li class="flex items-start gap-2 opacity-50"><span class="chip mt-0.5">01</span><span>Architecture &amp; Maturity</span></li>
+          <li class="flex items-start gap-2 opacity-50"><span class="chip mt-0.5">02</span><span>RBAC with Entra ID</span></li>
+          <li class="flex items-start gap-2 opacity-50"><span class="chip mt-0.5">03</span><span>Namespace Strategy</span></li>
+        </ol>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="lg:col-span-9 space-y-24">
+
+    <!-- ============================================================ -->
+    <!-- 00 WHY THIS SESSION EXISTS                                   -->
+    <!-- ============================================================ -->
+    <section id="summary" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">00</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Why this session exists</h2>
+      </div>
+
+      <p class="drop-cap text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-6">
+        We have been asked to land the vendor-supplied UP Framework v5.1.3 onto AKS in our existing Spoke VNet,
+        with all access private over ExpressRoute, Entra ID for identity, Vault for secrets and CloudBees for
+        delivery. Most of those constraints are non-negotiable. What is negotiable — and what this session
+        decides — is the <em>shape of the cluster estate</em>: how many clusters, how environments are partitioned,
+        which tools we adopt, which we defer, who owns what after Day&nbsp;0, and which questions we send to
+        Microsoft, to Cyber, and to the ACI vendor before design freeze.
+      </p>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-6">
+        The brief is deliberately short. Each topic carries two to four options, an annotated recommendation,
+        and the open questions we should put in the parking lot. The goal is to leave the room with about a
+        dozen <em>locked</em> decisions, and a clear list of items waiting on someone outside the room.
+      </p>
+
+      <div class="grid md:grid-cols-3 gap-5">
+        <div class="border rule-thin p-5" style="background: var(--paper);">
+          <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">In scope</div>
+          <ul class="text-sm space-y-1.5 text-[var(--ink-soft)]">
+            <li>· Cluster count &amp; environment split</li>
+            <li>· CNI, ingress, egress posture</li>
+            <li>· RBAC integration mode</li>
+            <li>· Tooling stack confirmation</li>
+            <li>· Pipeline identity model</li>
+            <li>· Policy &amp; admission scope</li>
+            <li>· Day 0 / 1 / 2 ownership</li>
+          </ul>
+        </div>
+        <div class="border rule-thin p-5" style="background: var(--paper);">
+          <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Out of scope (today)</div>
+          <ul class="text-sm space-y-1.5 text-[var(--ink-soft)]">
+            <li>· UP Framework chart-by-chart deployment</li>
+            <li>· Operator install order</li>
+            <li>· Detailed NetworkPolicy YAML</li>
+            <li>· Backup / restore runbooks</li>
+            <li>· Capacity model &amp; right-sizing</li>
+            <li>· Cost model</li>
+            <li>· DR drill plan</li>
+          </ul>
+        </div>
+        <div class="border rule-thin p-5" style="background: var(--paper-soft);">
+          <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Already locked by Landing Zone</div>
+          <ul class="text-sm space-y-1.5 text-[var(--ink-soft)]">
+            <li>· Spoke VNet, subnets, peering</li>
+            <li>· ExpressRoute circuit</li>
+            <li>· Customer-managed Private DNS zone</li>
+            <li>· Activity Log shipping</li>
+            <li>· Tenant-level Entra ID</li>
+            <li>· Subscription &amp; RG layout</li>
+            <li>· Default Azure Policy assignments</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 01 THE 30-MINUTE AGENDA                                      -->
+    <!-- ============================================================ -->
+    <section id="agenda" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">01</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">The 30-minute agenda</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        Ten timeboxed slots. Each one names the outcome we want before we move on. If we cannot land the
+        outcome inside the box, the topic moves to the parking lot — we do not let any single topic eat the
+        meeting.
+      </p>
+
+      <div class="border rule-thick p-6 md:p-8" style="background: var(--paper);">
+        <div class="agenda-row" style="border-bottom: 2px solid var(--ink);">
+          <div class="agenda-time">SLOT</div>
+          <div class="agenda-time">TIME</div>
+          <div class="agenda-time">TOPIC</div>
+          <div class="agenda-time">OUTCOME</div>
+        </div>
+
+        <div class="agenda-row">
+          <div class="agenda-num">01</div>
+          <div class="agenda-time">00:00&nbsp;→&nbsp;02:00</div>
+          <div class="agenda-title">Discussion objective &amp; scope</div>
+          <div class="agenda-outcome">Confirm in-scope vs deferred items</div>
+        </div>
+        <div class="agenda-row">
+          <div class="agenda-num">02</div>
+          <div class="agenda-time">02:00&nbsp;→&nbsp;05:00</div>
+          <div class="agenda-title">Cluster topology — Dev / NP / Prod</div>
+          <div class="agenda-outcome">Lock 3-cluster model</div>
+        </div>
+        <div class="agenda-row">
+          <div class="agenda-num">03</div>
+          <div class="agenda-time">05:00&nbsp;→&nbsp;08:00</div>
+          <div class="agenda-title">Environment separation inside NP</div>
+          <div class="agenda-outcome">Lock namespace-tenancy approach</div>
+        </div>
+        <div class="agenda-row">
+          <div class="agenda-num">04</div>
+          <div class="agenda-time">08:00&nbsp;→&nbsp;11:00</div>
+          <div class="agenda-title">Networking &amp; connectivity baseline</div>
+          <div class="agenda-outcome">Lock CNI mode &amp; ingress option</div>
+        </div>
+        <div class="agenda-row">
+          <div class="agenda-num">05</div>
+          <div class="agenda-time">11:00&nbsp;→&nbsp;14:00</div>
+          <div class="agenda-title">Identity, RBAC, PIM &amp; Workload Identity</div>
+          <div class="agenda-outcome">Lock Azure-RBAC-for-K8s + PIM model</div>
+        </div>
+        <div class="agenda-row">
+          <div class="agenda-num">06</div>
+          <div class="agenda-time">14:00&nbsp;→&nbsp;17:00</div>
+          <div class="agenda-title">Tooling stack — Vault, Venafi, Istio, Prom/ELK, Splunk/Dynatrace, RabbitMQ</div>
+          <div class="agenda-outcome">Confirm vendor-aligned stack</div>
+        </div>
+        <div class="agenda-row">
+          <div class="agenda-num">07</div>
+          <div class="agenda-time">17:00&nbsp;→&nbsp;20:00</div>
+          <div class="agenda-title">Pipeline &amp; deployment identity</div>
+          <div class="agenda-outcome">Lock OIDC federation + 2-SPN/env pattern</div>
+        </div>
+        <div class="agenda-row">
+          <div class="agenda-num">08</div>
+          <div class="agenda-time">20:00&nbsp;→&nbsp;23:00</div>
+          <div class="agenda-title">Policy scope — Bank initiative + CIS AKS + PSA + admission</div>
+          <div class="agenda-outcome">Identify cyber-blocking items</div>
+        </div>
+        <div class="agenda-row">
+          <div class="agenda-num">09</div>
+          <div class="agenda-time">23:00&nbsp;→&nbsp;26:00</div>
+          <div class="agenda-title">Day 0 / Day 1 / Day 2 ownership</div>
+          <div class="agenda-outcome">Pre-fill RACI</div>
+        </div>
+        <div class="agenda-row">
+          <div class="agenda-num">10</div>
+          <div class="agenda-time">26:00&nbsp;→&nbsp;30:00</div>
+          <div class="agenda-title">Parking lot — Microsoft / Cyber / ACI vendor questions</div>
+          <div class="agenda-outcome">Three named lists with owners</div>
+        </div>
+      </div>
+
+      <div class="mt-6 border-l-4 pl-6 py-2" style="border-color: var(--blue);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Facilitator note</div>
+        <p class="text-sm text-[var(--ink-soft)]">Slots 04 and 05 will overrun if we re-litigate Landing Zone constraints. Anchor those slots on the
+        capability the cluster needs to expose, not on the LZ networking model.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 02 CLUSTER TOPOLOGY                                          -->
+    <!-- ============================================================ -->
+    <section id="topology" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">02</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Cluster topology</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        How many clusters do we run, and what does each cluster contain? This is an irreversible-ish decision
+        — collapsing two clusters into one is feasible but expensive; splitting one in two later is brutal.
+        We commit upfront.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-5 mb-8">
+
+        <div class="opt-card" data-pick="reject">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">OPT-A</span>
+            <span class="chip chip-danger">reject</span>
+          </div>
+          <h4 class="font-display text-xl mb-3">Single shared cluster</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">One cluster hosts Dev, NP and Prod environments via namespaces.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Lowest cost &amp; one upgrade window</li>
+            <li class="con">Blast radius covers Prod</li>
+            <li class="risk">Cyber will not approve — Prod and Dev sharing control plane</li>
+          </ul>
+        </div>
+
+        <div class="opt-card" data-pick="recommend">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">OPT-B</span>
+            <span class="chip chip-ok">recommended</span>
+          </div>
+          <h4 class="font-display text-xl mb-3">Three clusters: Dev · NP · Prod</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">Independent clusters per environment tier. NP holds SIT/UAT/PERF as namespaces. Prod is single-tenant.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Clean blast radius, independent upgrade cadences</li>
+            <li class="pro">Distinct change-windows for Prod</li>
+            <li class="pro">Aligns with our existing Maturity Model (Part 01)</li>
+            <li class="con">Three control planes to operate</li>
+          </ul>
+        </div>
+
+        <div class="opt-card" data-pick="reject">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">OPT-C</span>
+            <span class="chip">defer</span>
+          </div>
+          <h4 class="font-display text-xl mb-3">Five clusters: Dev / SIT / UAT / PERF / Prod</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">One cluster per logical environment.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Strongest isolation — no shared control plane in NP</li>
+            <li class="con">5× cost for control planes &amp; node minimums</li>
+            <li class="con">Operational overhead does not justify isolation gain at this scale</li>
+          </ul>
+        </div>
+
+        <div class="opt-card" data-pick="reject">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">OPT-D</span>
+            <span class="chip">defer</span>
+          </div>
+          <h4 class="font-display text-xl mb-3">Cluster-per-tenant (UP-FW, future tenants)</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">Provision a new cluster every time a new line-of-business product lands.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Hard isolation per product</li>
+            <li class="con">Premature — we have one tenant (UP-FW) on Day&nbsp;1</li>
+            <li class="con">Cluster sprawl without a platform team mature enough to operate it</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="border rule-thick p-5" style="background: var(--paper-soft);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Working recommendation — to confirm in slot 02</div>
+        <p class="text-sm text-[var(--ink-soft)]">
+          <strong>OPT-B (three clusters)</strong>. Naming: <code class="font-mono text-xs">aks-dev-up</code>,
+          <code class="font-mono text-xs">aks-np-up</code>, <code class="font-mono text-xs">aks-prod-up</code>.
+          Dev and NP in primary region only; Prod resilient across 3 AZs in primary, with a DR posture deferred
+          to Part 01.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 03 ENVIRONMENT SEPARATION                                    -->
+    <!-- ============================================================ -->
+    <section id="envsep" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">03</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Environment separation inside a cluster</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        The Non-Prod cluster hosts SIT, UAT and PERF. How do we keep them apart so a noisy PERF run does not
+        starve UAT, and so a misconfigured SIT chart cannot reach UAT&nbsp;data?
+      </p>
+
+      <div class="grid md:grid-cols-3 gap-5 mb-8">
+
+        <div class="opt-card" data-pick="recommend">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">OPT-A</span>
+            <span class="chip chip-ok">recommended</span>
+          </div>
+          <h4 class="font-display text-xl mb-3">Namespace-per-env tenancy</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">SIT, UAT, PERF are namespaces. Isolation = NetworkPolicy default-deny + Istio mTLS + AuthorizationPolicy + ResourceQuota + LimitRange + PSA.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Native, supported, well-documented</li>
+            <li class="pro">Fits the four-layer isolation model in Part 03</li>
+            <li class="con">Soft tenancy — discipline-dependent</li>
+          </ul>
+        </div>
+
+        <div class="opt-card">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">OPT-B</span>
+            <span class="chip chip-blue">conditional</span>
+          </div>
+          <h4 class="font-display text-xl mb-3">Namespace + dedicated node pool for PERF</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">PERF lane gets its own taint/tolerance node pool to prevent noisy-neighbour impact during load tests.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Removes PERF as a noisy-neighbour risk</li>
+            <li class="pro">Cheap incremental change on top of OPT-A</li>
+            <li class="con">Idle PERF pool burns money outside test windows — needs auto-scale to zero</li>
+          </ul>
+        </div>
+
+        <div class="opt-card" data-pick="reject">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">OPT-C</span>
+            <span class="chip">defer</span>
+          </div>
+          <h4 class="font-display text-xl mb-3">vClusters / Capsule / Loft</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">Each env gets a virtual control plane on top of the host cluster.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Stronger API-level isolation per tenant</li>
+            <li class="con">Net-new operating model — Cyber, SRE, support all need uplift</li>
+            <li class="risk">Not justified for one tenant on Day&nbsp;1</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="border rule-thick p-5" style="background: var(--paper-soft);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Working recommendation — to confirm in slot 03</div>
+        <p class="text-sm text-[var(--ink-soft)]">
+          <strong>OPT-A as baseline</strong>, with <strong>OPT-B activated for PERF only</strong> if (and when)
+          first capacity tests reveal noisy-neighbour interference on UAT. Dedicated node pool added as a Day&nbsp;1.5
+          item, not Day&nbsp;0.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 04 NETWORKING & CONNECTIVITY                                 -->
+    <!-- ============================================================ -->
+    <section id="network" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">04</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Networking &amp; connectivity</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        The brief commits us to: private API server, Azure CNI Overlay, NetworkPolicy enabled, internal-only
+        Standard Load Balancer, Private Endpoints for everything that has one. We confirm those, and we
+        decide the remaining live questions.
+      </p>
+
+      <table class="matrix mb-8">
+        <thead>
+          <tr>
+            <th style="width:22%">Decision</th>
+            <th style="width:30%">Working choice</th>
+            <th style="width:26%">Alternative considered</th>
+            <th>Notes / open question</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>API server access</td>
+            <td><strong>Private cluster</strong> — API server endpoint reachable only via Private Link from on-prem over ER</td>
+            <td>Authorized IP ranges on a public endpoint</td>
+            <td>Confirmed. No public hop for kubectl.</td>
+          </tr>
+          <tr>
+            <td>CNI mode</td>
+            <td><strong>Azure CNI Overlay</strong> — pods on <code class="font-mono text-xs">100.64.0.0/16</code>, nodes on Spoke subnet</td>
+            <td>Azure CNI with VNet IPs; Cilium dataplane</td>
+            <td>Overlay protects Spoke IP plan. Cilium dataplane discussion deferred.</td>
+          </tr>
+          <tr>
+            <td>NetworkPolicy engine</td>
+            <td><strong>Azure NPM</strong> at Day&nbsp;0; Cilium evaluated for Part&nbsp;03</td>
+            <td>Calico</td>
+            <td>NPM is Microsoft-supported. Cilium gives L7 + Hubble — revisit with Cyber.</td>
+          </tr>
+          <tr>
+            <td>Ingress controller</td>
+            <td><strong>Istio Ingress Gateway (internal LB)</strong> from NP onward</td>
+            <td>NGINX Ingress; AGIC; Application Gateway with internal frontend</td>
+            <td>Open question — does ACI vendor mandate Istio gateway specifically? Parking lot.</td>
+          </tr>
+          <tr>
+            <td>Egress to Azure PaaS</td>
+            <td><strong>Private Endpoints</strong> for ACR, Key Vault, Storage; Private DNS via LZ-managed zone</td>
+            <td>Service Endpoints</td>
+            <td>Confirmed by brief. Customer-managed PDNS already exists.</td>
+          </tr>
+          <tr>
+            <td>Egress to internet / on-prem FQDNs</td>
+            <td><strong>Forced-tunnel via on-prem proxy</strong> (no direct Azure egress)</td>
+            <td>Azure Firewall in hub</td>
+            <td>Open question — confirm Landing Zone egress posture and FQDN allow-list owner.</td>
+          </tr>
+          <tr>
+            <td>DNS for cluster &amp; PEs</td>
+            <td><strong>Customer-managed Private DNS zone</strong> (LZ-provided), AKS auto-registration disabled</td>
+            <td>AKS-managed PDNS zone</td>
+            <td>Confirmed. AKS will use existing zone; we contribute records via cluster controller.</td>
+          </tr>
+          <tr>
+            <td>Service mesh ingress + east-west</td>
+            <td><strong>Istio</strong> from NP onward, strict mTLS in Prod</td>
+            <td>Linkerd; Cilium service mesh; no mesh</td>
+            <td>Vendor preference for Istio noted. Confirm with ACI vendor support matrix.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="border-l-4 pl-6 py-2" style="border-color: var(--blue);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Open networking questions for the room</div>
+        <ul class="text-sm space-y-1.5 text-[var(--ink-soft)]">
+          <li>· Does the LZ-managed PDNS zone allow programmatic record creation by an AKS-bound identity, or do we file tickets?</li>
+          <li>· Is on-prem proxy egress already capacity-sized for AKS image pulls before ACR is fully populated (first cluster bootstrap)?</li>
+          <li>· What is the IP plan for the AKS subnet? Confirm with LZ team — are we sized for one node pool or three?</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 05 IDENTITY & RBAC                                           -->
+    <!-- ============================================================ -->
+    <section id="identity" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">05</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Identity &amp; RBAC</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        Three identity surfaces: human access to the API server, pipeline access, and pod-to-Azure access.
+        We pick the integration mode for each. Detailed persona &amp; group hierarchy is owned by Part 02 — this
+        slot just locks the integration mode.
+      </p>
+
+      <div class="grid md:grid-cols-3 gap-5 mb-8">
+
+        <div class="opt-card" data-pick="recommend">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">RBAC-A</span>
+            <span class="chip chip-ok">recommended</span>
+          </div>
+          <h4 class="font-display text-lg mb-3">Human access</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3"><strong>AKS-managed Entra ID + Azure RBAC for Kubernetes</strong>. Local accounts disabled. Cluster-admin via PIM only.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">One auth source, audit trail in Entra</li>
+            <li class="pro">No <code class="font-mono text-xs">kubeconfig</code> shipping</li>
+            <li class="pro">Aligns with bank-wide Conditional Access posture</li>
+          </ul>
+        </div>
+
+        <div class="opt-card" data-pick="recommend">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">RBAC-B</span>
+            <span class="chip chip-ok">recommended</span>
+          </div>
+          <h4 class="font-display text-lg mb-3">Pipeline identity</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3"><strong>SPN with OIDC federation from CloudBees</strong>. No static client secret anywhere. Two SPNs per env (Terraform applier &amp; Helm deployer).</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Zero static credentials</li>
+            <li class="pro">Subject pinned to CloudBees folder + pipeline</li>
+            <li class="con">Requires CloudBees OIDC support — confirm version</li>
+          </ul>
+        </div>
+
+        <div class="opt-card" data-pick="recommend">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">RBAC-C</span>
+            <span class="chip chip-ok">recommended</span>
+          </div>
+          <h4 class="font-display text-lg mb-3">Pod-to-Azure</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3"><strong>Workload Identity (OIDC)</strong> — ServiceAccount → Federated Credential → Azure permissions. No managed identity hijacking, no IMDS shim.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Per-workload, namespace-scoped</li>
+            <li class="pro">Vault uses the same federation for secret retrieval</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="border rule-thick p-5" style="background: var(--paper-soft);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Working recommendations — to confirm in slot 05</div>
+        <ul class="text-sm space-y-1.5 text-[var(--ink-soft)]">
+          <li>· Local accounts <strong>disabled</strong> on every cluster (no break-glass kubeconfig).</li>
+          <li>· Cluster-admin <strong>PIM-eligible only</strong> — no standing privilege.</li>
+          <li>· Six personas (Platform Admin, Cluster Admin, App Deployer, SRE, Auditor, Break-glass) — full hierarchy in Part&nbsp;02.</li>
+          <li>· Break-glass = single Entra account per cluster, PIM-activated, MFA-enforced, monitored.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 06 TOOLING                                                   -->
+    <!-- ============================================================ -->
+    <section id="tooling" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">06</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Platform tooling stack</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        Most tools are dictated by the brief. The job of this slot is to confirm we still agree, and to flag
+        the single tool decision that is genuinely open: the admission policy engine.
+      </p>
+
+      <table class="matrix mb-8">
+        <thead>
+          <tr>
+            <th style="width:22%">Capability</th>
+            <th style="width:24%">Choice</th>
+            <th style="width:24%">Why this, not alternative</th>
+            <th>Open / parking-lot</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Secrets broker</td>
+            <td><strong>HashiCorp Vault</strong> via Workload Identity + Vault Agent Injector</td>
+            <td>Existing enterprise Vault, dynamic secrets, multi-cloud</td>
+            <td>Confirm Vault namespace per cluster &amp; auth-method strategy</td>
+          </tr>
+          <tr>
+            <td>Platform secrets (KV-only)</td>
+            <td><strong>Azure Key Vault</strong> via CSI driver, Private Link only</td>
+            <td>Used for platform bootstrap secrets that must exist before Vault</td>
+            <td>Naming/SKU baseline owned by LZ?</td>
+          </tr>
+          <tr>
+            <td>Certificate issuer</td>
+            <td><strong>cert-manager</strong> with Venafi issuer</td>
+            <td>Bank-mandated CA (Venafi); cert-manager is the K8s-native bridge</td>
+            <td>Confirm Venafi policy folder &amp; rate limits with Cyber</td>
+          </tr>
+          <tr>
+            <td>Service mesh</td>
+            <td><strong>Istio</strong> (operator-installed) — permissive in NP, strict mTLS in Prod</td>
+            <td>Vendor alignment; AuthorizationPolicy gives identity-aware east-west</td>
+            <td>ACI vendor confirmation that UP-FW is Istio-tested</td>
+          </tr>
+          <tr>
+            <td>Messaging</td>
+            <td><strong>RabbitMQ Cluster Operator</strong> + Messaging Topology Operator</td>
+            <td>Vendor requirement; CRD-driven</td>
+            <td>Storage class for queue persistence in multi-AZ</td>
+          </tr>
+          <tr>
+            <td>App logs</td>
+            <td><strong>Fluent Bit DaemonSet → ELK</strong> (future managed Elastic/Kibana)</td>
+            <td>Brief mandate</td>
+            <td>Index strategy per env; PII redaction policy with Cyber</td>
+          </tr>
+          <tr>
+            <td>App metrics</td>
+            <td><strong>Prometheus + Alertmanager</strong>; <code>ServiceMonitor</code> CRDs</td>
+            <td>Brief mandate</td>
+            <td>Long-term storage destination — Thanos? On-prem? Defer.</td>
+          </tr>
+          <tr>
+            <td>Cluster infra metrics</td>
+            <td><strong>Splunk + Dynatrace</strong> agents (on-prem stacks)</td>
+            <td>Brief mandate; reuses bank standards</td>
+            <td>Splunk forwarder placement (DaemonSet vs syslog)</td>
+          </tr>
+          <tr>
+            <td>Image scanning</td>
+            <td><strong>ACR Defender</strong> + <strong>Trivy operator</strong></td>
+            <td>Two layers: registry + cluster runtime</td>
+            <td>Cyber to confirm preferred scanner; SBOM pipeline TBD</td>
+          </tr>
+          <tr>
+            <td>Admission policy engine</td>
+            <td><strong>OPEN — Kyverno vs Gatekeeper</strong></td>
+            <td>Kyverno = simpler YAML, growing adoption; Gatekeeper = OPA familiarity</td>
+            <td>Decide today or escalate to Cyber for org standard</td>
+          </tr>
+          <tr>
+            <td>Pod Security baseline</td>
+            <td><strong>PSA enforced</strong>: <code class="font-mono text-xs">baseline</code> in Dev/NP, <code class="font-mono text-xs">restricted</code> in Prod</td>
+            <td>Built-in, no extra moving part</td>
+            <td>Confirm UP-FW workloads pass <code class="font-mono text-xs">restricted</code>: vendor question</td>
+          </tr>
+          <tr>
+            <td>Backup</td>
+            <td><strong>Velero</strong> in Prod from Day&nbsp;0; NP from Day&nbsp;1</td>
+            <td>De-facto K8s backup; supports Azure Blob</td>
+            <td>Restore-drill cadence (Cyber requirement?)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 07 PIPELINE & DEPLOY IDENTITY                                -->
+    <!-- ============================================================ -->
+    <section id="pipeline" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">07</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Pipeline &amp; deployment identity</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        CloudBees is the only pipeline runner. There are two distinct delivery flows: Terraform that
+        provisions Azure resources (cluster, ACR, KV, peerings), and Helm that deploys workloads into
+        clusters. They must use different identities.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-5 mb-8">
+
+        <div class="opt-card" data-pick="reject">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">PIPE-A</span>
+            <span class="chip chip-danger">reject</span>
+          </div>
+          <h4 class="font-display text-xl mb-3">Single SPN per env, secret stored in CloudBees</h4>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">Simple to configure</li>
+            <li class="con">Static secret — rotation burden, theft risk</li>
+            <li class="risk">One identity covers infra and app — over-privileged</li>
+          </ul>
+        </div>
+
+        <div class="opt-card" data-pick="recommend">
+          <div class="flex items-baseline justify-between mb-2">
+            <span class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)]">PIPE-B</span>
+            <span class="chip chip-ok">recommended</span>
+          </div>
+          <h4 class="font-display text-xl mb-3">Two SPNs per env, OIDC federation from CloudBees</h4>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li class="pro">No static secret — federation is the credential</li>
+            <li class="pro">Subject pinned to a folder + pipeline name</li>
+            <li class="pro">Splits Terraform-applier (broad infra) from Helm-deployer (namespace-only)</li>
+            <li class="con">Requires CloudBees OIDC plugin — confirm</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="border rule-thin p-5 mb-8" style="background: var(--paper);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-3">Identity matrix per cluster</div>
+        <table class="matrix">
+          <thead>
+            <tr><th>SPN</th><th>Used by</th><th>Azure permissions</th><th>K8s RBAC</th><th>Federation subject</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="font-mono text-xs">spn-tf-{env}-up</code></td>
+              <td>Terraform pipeline</td>
+              <td>Custom role: <code class="font-mono text-xs">aks-tf-deployer</code> on RG only</td>
+              <td>None directly</td>
+              <td>CloudBees folder = <code class="font-mono text-xs">infra/up</code></td>
+            </tr>
+            <tr>
+              <td><code class="font-mono text-xs">spn-helm-{env}-up</code></td>
+              <td>Helm pipeline</td>
+              <td>AcrPull on ACR; Get on AKS</td>
+              <td>Edit on a single namespace via group binding</td>
+              <td>CloudBees folder = <code class="font-mono text-xs">apps/up/{env}</code></td>
+            </tr>
+            <tr>
+              <td><code class="font-mono text-xs">spn-prod-helm-up</code></td>
+              <td>Prod-only Helm pipeline</td>
+              <td>AcrPull on Prod ACR</td>
+              <td>Edit on <code class="font-mono text-xs">prod-up-core</code> only</td>
+              <td>Pinned pipeline name + change-window approval gate</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="border-l-4 pl-6 py-2" style="border-color: var(--blue);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Open pipeline questions for the room</div>
+        <ul class="text-sm space-y-1.5 text-[var(--ink-soft)]">
+          <li>· What CloudBees Core/CD version are we on, and does it support OIDC issuance with subject claims that include folder + pipeline?</li>
+          <li>· Does Cyber accept federated credentials as &ldquo;keyless&rdquo;, or do they still require an ITSM-tracked credential record?</li>
+          <li>· Approval gate for Prod — is it ServiceNow change ticket linkage, or in-CloudBees approver list?</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 08 DOWNSTREAM                                                -->
+    <!-- ============================================================ -->
+    <section id="downstream" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">08</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Downstream service connectivity</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        Pods connect outward to a small set of services. We pick the connection pattern, the authn mode, and
+        the network path for each. Everything stays inside the bank's perimeter — no public hop.
+      </p>
+
+      <table class="matrix mb-8">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Network path</th>
+            <th>AuthN</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PostgreSQL (multi-AZ VMs in same VNet)</td>
+            <td>Same Spoke VNet, separate subnet, NSG-restricted</td>
+            <td>Vault dynamic credentials (PG role broker)</td>
+            <td>No password-on-disk in pod; rotated on lease</td>
+          </tr>
+          <tr>
+            <td>RabbitMQ</td>
+            <td>In-cluster (Cluster Operator)</td>
+            <td>Operator-managed default user; user JIT via Topology Operator</td>
+            <td>mTLS client certs from cert-manager</td>
+          </tr>
+          <tr>
+            <td>ACR (private registry)</td>
+            <td>Private Endpoint into Spoke; PDNS hand-off</td>
+            <td>Workload Identity (kubelet pull) / SPN (CI push)</td>
+            <td>Geo-replicate Prod ACR; Dev/NP can share or split</td>
+          </tr>
+          <tr>
+            <td>Vault (HashiCorp)</td>
+            <td>On-prem over ER, exposed via internal load balancer</td>
+            <td>Workload Identity → Vault JWT auth</td>
+            <td>Vault namespace-per-cluster recommended</td>
+          </tr>
+          <tr>
+            <td>Azure Key Vault (platform secrets)</td>
+            <td>Private Endpoint into Spoke</td>
+            <td>CSI driver with Workload Identity</td>
+            <td>Bootstrap-only; tenant secrets stay in Vault</td>
+          </tr>
+          <tr>
+            <td>Azure Storage (Velero, Fluent Bit buffer, Splunk overflow)</td>
+            <td>Private Endpoint into Spoke</td>
+            <td>Workload Identity</td>
+            <td>Storage tier owned by Platform; tenants do not consume directly</td>
+          </tr>
+          <tr>
+            <td>ELK (managed Elastic/Kibana future)</td>
+            <td>Private Endpoint OR ER into on-prem cluster</td>
+            <td>API key in Fluent Bit, sourced from Vault</td>
+            <td>Where ELK lands is a parking-lot item</td>
+          </tr>
+          <tr>
+            <td>Splunk / Dynatrace</td>
+            <td>ER to on-prem collectors</td>
+            <td>Token in agent config, sourced from Vault</td>
+            <td>Agents run as DaemonSet</td>
+          </tr>
+          <tr>
+            <td>Venafi (TPP)</td>
+            <td>ER to on-prem TPP</td>
+            <td>cert-manager Venafi issuer with API token (Vault-stored)</td>
+            <td>Confirm policy folder per env with Cyber</td>
+          </tr>
+          <tr>
+            <td>Bank IDP / API gateway (future)</td>
+            <td>ER or Private Endpoint, depending on placement</td>
+            <td>OIDC client credentials, from Vault</td>
+            <td>Out of scope today; flagged for Part 03 successor</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="border rule-thick p-5" style="background: var(--paper-soft);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">The single rule for downstream connectivity</div>
+        <p class="text-sm text-[var(--ink-soft)]">
+          <strong>Every outbound connection from a pod is brokered by an identity (Workload Identity → Vault
+          → service auth). No long-lived credential is ever written to a pod's filesystem or
+          environment.</strong> If a downstream cannot fit that pattern, it goes to the parking lot.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 09 POLICY, CIS, CYBER GATES                                  -->
+    <!-- ============================================================ -->
+    <section id="policy" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">09</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Policy, CIS &amp; cyber gates</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        Three layers of policy apply to this cluster. Bank-level Azure Policy assignments control what we can
+        provision in the subscription. CIS benchmarks define a baseline cyber will measure us against. K8s
+        admission controllers enforce policy at deploy time inside the cluster. We need a clear picture of all
+        three before cyber sign-off.
+      </p>
+
+      <div class="grid md:grid-cols-3 gap-5 mb-10">
+
+        <div class="border rule-thin p-5" style="background: var(--paper);">
+          <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Layer 1</div>
+          <h4 class="font-display text-xl mb-3">Bank Azure Policy initiative</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">Inherited from Landing Zone at Management Group scope. We do not opt out — we add cluster-specific deny rules on top.</p>
+          <ul class="text-sm space-y-1 text-[var(--ink-soft)]">
+            <li>· Deny public IP on AKS</li>
+            <li>· Deny non-private API server</li>
+            <li>· Deny ACR public access</li>
+            <li>· Require diagnostic settings</li>
+            <li>· Require tags &amp; resource locks</li>
+            <li>· Defender for Cloud — Containers plan ON</li>
+          </ul>
+        </div>
+
+        <div class="border rule-thin p-5" style="background: var(--paper);">
+          <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Layer 2</div>
+          <h4 class="font-display text-xl mb-3">CIS benchmarks — three of them</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">Three distinct benchmarks apply; we should not conflate them.</p>
+          <ul class="text-sm space-y-1.5 text-[var(--ink-soft)]">
+            <li><strong>CIS Azure AKS Benchmark</strong> — control plane / cluster config</li>
+            <li><strong>CIS Kubernetes Benchmark</strong> — workload manifests, RBAC, NetworkPolicy</li>
+            <li><strong>CIS Docker Benchmark</strong> — base image &amp; build pipeline</li>
+          </ul>
+          <p class="text-xs text-[var(--muted)] mt-3">Defender for Cloud's regulatory compliance dashboard maps the AKS one. The others we measure ourselves (kube-bench, Trivy).</p>
+        </div>
+
+        <div class="border rule-thin p-5" style="background: var(--paper);">
+          <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">Layer 3</div>
+          <h4 class="font-display text-xl mb-3">In-cluster admission</h4>
+          <p class="text-sm text-[var(--ink-soft)] mb-3">Controls applied at <em>deploy time</em>, before a pod ever runs.</p>
+          <ul class="text-sm space-y-1.5 text-[var(--ink-soft)]">
+            <li>· <strong>Pod Security Admission</strong> — baseline (NP), restricted (Prod)</li>
+            <li>· <strong>Kyverno</strong> (recommended) policies — image registry pin, label requirement, mTLS sidecar requirement</li>
+            <li>· <strong>Image signing</strong> — cosign / Ratify — Prod only initially, warn-mode in NP</li>
+            <li>· <strong>Trivy operator</strong> — runtime scan, fail-build threshold</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="border rule-thick p-5" style="background: var(--paper-soft);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">CIS AKS Benchmark — top items to pre-audit before cyber engages</div>
+        <table class="matrix">
+          <thead>
+            <tr><th style="width:20%">Area</th><th style="width:40%">Control intent</th><th>Our position at Day 0</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>API server</td><td>Disable local accounts; require Entra ID</td><td>Implemented at provisioning</td></tr>
+            <tr><td>API server</td><td>Private endpoint, no public access</td><td>Implemented</td></tr>
+            <tr><td>Network</td><td>NetworkPolicy enabled</td><td>Implemented (NPM)</td></tr>
+            <tr><td>Network</td><td>Default-deny posture per namespace</td><td>Implemented from NP onward</td></tr>
+            <tr><td>Identity</td><td>Workload Identity for pod-to-Azure</td><td>Implemented</td></tr>
+            <tr><td>Logging</td><td>API server audit logs to a SIEM</td><td>Activity Log → LZ; audit log destination — confirm</td></tr>
+            <tr><td>Image</td><td>Pull only from approved registries</td><td>Kyverno policy (Day 1)</td></tr>
+            <tr><td>Image</td><td>Image scanning + threshold gating</td><td>ACR Defender + Trivy</td></tr>
+            <tr><td>Cluster</td><td>Latest supported AKS version</td><td>Confirmed — automated upgrade channel TBD</td></tr>
+            <tr><td>Cluster</td><td>Encryption at rest with CMK</td><td>Open question — Cyber preference for CMK vs platform key</td></tr>
+            <tr><td>RBAC</td><td>No standing cluster-admin</td><td>PIM-only</td></tr>
+            <tr><td>RBAC</td><td>Break-glass account audited</td><td>Implemented (Part 02)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 10 RACI                                                      -->
+    <!-- ============================================================ -->
+    <section id="raci" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">10</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Day 0 / Day 1 / Day 2 — RACI</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-6 max-w-3xl">
+        A pre-fill for the room to argue with. <em>Day 0</em> = build &amp; cluster bootstrap (provisioning). <em>Day 1</em>
+        = workload onboarding (UP-FW operators &amp; charts go live). <em>Day 2</em> = steady-state operation
+        (incidents, upgrades, rotations, audit).
+      </p>
+
+      <div class="border rule-thick p-5 mb-8" style="background: var(--paper);">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th>Activity</th>
+              <th>Stage</th>
+              <th>Platform</th>
+              <th>App / UP-FW</th>
+              <th>SRE</th>
+              <th>Cyber</th>
+              <th>Vendor</th>
+              <th>LZ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Provision VNet, subnets, peering</td><td>D0</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-i">I</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-r">R/A</td></tr>
+            <tr><td>Provision AKS cluster (Terraform)</td><td>D0</td><td class="raci-r">R/A</td><td class="raci-i">I</td><td class="raci-c">C</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-i">I</td></tr>
+            <tr><td>Configure Entra ID groups + PIM</td><td>D0</td><td class="raci-r">R</td><td class="raci-i">I</td><td class="raci-i">I</td><td class="raci-a">A</td><td class="raci-i">I</td><td class="raci-i">I</td></tr>
+            <tr><td>Cyber sign-off on baseline</td><td>D0</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-i">I</td><td class="raci-r">R/A</td><td class="raci-i">I</td><td class="raci-i">I</td></tr>
+            <tr><td>Install platform operators (Istio, Vault, cert-mgr, Prom, FB)</td><td>D1</td><td class="raci-r">R/A</td><td class="raci-c">C</td><td class="raci-c">C</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-i">I</td></tr>
+            <tr><td>Install RabbitMQ Cluster Operator</td><td>D1</td><td class="raci-r">R/A</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-i">I</td><td class="raci-c">C</td><td class="raci-i">I</td></tr>
+            <tr><td>UP-FW Helm chart deployment</td><td>D1</td><td class="raci-c">C</td><td class="raci-r">R/A</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-c">C</td><td class="raci-i">I</td></tr>
+            <tr><td>Onboard first SIT environment</td><td>D1</td><td class="raci-c">C</td><td class="raci-r">R/A</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-i">I</td><td class="raci-i">I</td></tr>
+            <tr><td>Run CIS / kube-bench audit</td><td>D1</td><td class="raci-r">R</td><td class="raci-i">I</td><td class="raci-c">C</td><td class="raci-a">A</td><td class="raci-i">I</td><td class="raci-i">I</td></tr>
+            <tr><td>Cluster K8s minor upgrade</td><td>D2</td><td class="raci-r">R/A</td><td class="raci-c">C</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-c">C</td><td class="raci-i">I</td></tr>
+            <tr><td>Image vulnerability triage</td><td>D2</td><td class="raci-c">C</td><td class="raci-r">R</td><td class="raci-c">C</td><td class="raci-a">A</td><td class="raci-c">C</td><td class="raci-i">I</td></tr>
+            <tr><td>Production incident response (P1)</td><td>D2</td><td class="raci-c">C</td><td class="raci-c">C</td><td class="raci-r">R/A</td><td class="raci-c">C</td><td class="raci-c">C</td><td class="raci-i">I</td></tr>
+            <tr><td>SPN federation rotation / re-issue</td><td>D2</td><td class="raci-r">R/A</td><td class="raci-i">I</td><td class="raci-c">C</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-i">I</td></tr>
+            <tr><td>UP-FW version uplift (5.1.x → 5.2.x)</td><td>D2</td><td class="raci-c">C</td><td class="raci-r">R/A</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-c">C</td><td class="raci-i">I</td></tr>
+            <tr><td>DR / Velero restore drill</td><td>D2</td><td class="raci-r">R</td><td class="raci-c">C</td><td class="raci-c">C</td><td class="raci-a">A</td><td class="raci-i">I</td><td class="raci-i">I</td></tr>
+            <tr><td>Quarterly access review</td><td>D2</td><td class="raci-c">C</td><td class="raci-i">I</td><td class="raci-i">I</td><td class="raci-r">R/A</td><td class="raci-i">I</td><td class="raci-i">I</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid md:grid-cols-4 gap-3 mb-4 text-xs">
+        <div class="border rule-thin p-2"><span class="raci-r px-2 py-1 mr-2 inline-block">R</span>Responsible — does the work</div>
+        <div class="border rule-thin p-2"><span class="raci-a px-2 py-1 mr-2 inline-block">A</span>Accountable — owns the outcome</div>
+        <div class="border rule-thin p-2"><span class="raci-c px-2 py-1 mr-2 inline-block">C</span>Consulted — input required</div>
+        <div class="border rule-thin p-2"><span class="raci-i px-2 py-1 mr-2 inline-block">I</span>Informed — kept in the loop</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 11 PARKING LOT                                               -->
+    <!-- ============================================================ -->
+    <section id="parking" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">11</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Parking lot — questions to escalate</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        Three named lists. We leave the meeting with a <em>nominated owner</em> and a <em>target close
+        date</em> against each item. No item leaves the meeting unowned.
+      </p>
+
+      <!-- For Microsoft -->
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="chip chip-blue">Microsoft Support / FastTrack</span>
+        </div>
+        <div class="pl-card">
+          <div class="q">Latest AKS LTS release vs current GA — what does our subscription tier give us, and what is the patch cadence we should align on?</div>
+          <div class="q">Recommended pattern for kubectl-from-on-prem to a private API server over ExpressRoute — without Azure Bastion in the path?</div>
+          <div class="q">Defender for Containers — what is the agent's footprint, and does it inspect Vault sidecar traffic?</div>
+          <div class="q">Workload Identity federation from CloudBees Jenkins — what subject claim formats are validated, and is folder + pipeline pinning supported?</div>
+          <div class="q">CMK encryption at rest for AKS — what is the rotation contract, and is HSM-backed CMK supported on our region?</div>
+          <div class="q">CNI Overlay subnet sizing — best practice for pod CIDR vs node count growth headroom?</div>
+          <div class="q">Image cleaner + Ratify — production GA status, and is there a path to deprecate Trivy in favour of Defender + Ratify long term?</div>
+          <div class="q">AKS uptime SLA tier — Standard vs Premium — what is the differentiator that matters for our Prod SLO?</div>
+          <div class="q">Auto-upgrade channels — do you recommend <code class="font-mono text-xs">stable</code> or <code class="font-mono text-xs">node-image</code> for a regulated bank workload?</div>
+        </div>
+      </div>
+
+      <!-- For Cyber -->
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="chip chip-warn">Internal Cyber team</span>
+        </div>
+        <div class="pl-card cyber">
+          <div class="q">Which Azure Policy initiative does the LZ assign to our subscription, and can we add UP-FW deny rules without overriding it?</div>
+          <div class="q">Target CIS AKS Benchmark version for cyber sign-off — and is the Defender for Cloud regulatory compliance dashboard the source of truth, or do we run kube-bench independently?</div>
+          <div class="q">Approved admission controller — does Cyber have a standard? (Kyverno or Gatekeeper)</div>
+          <div class="q">Approved image scanner — Trivy, ACR Defender, Prisma Cloud, Aqua? Is the SBOM pipeline a separate workstream?</div>
+          <div class="q">Pod Security profile expectations — restricted required in Prod from Day 0, or is baseline acceptable for early stages?</div>
+          <div class="q">Egress firewall ownership — Azure Firewall in the hub, or forced-tunnel through on-prem? Who owns the FQDN allow-list per workload?</div>
+          <div class="q">Break-glass account model — single shared account vs per-cluster, MFA token issuance, monitoring &amp; alerting threshold?</div>
+          <div class="q">Audit log destination — does the bank SIEM ingest AKS API server audit logs directly, or via the LZ Activity Log pipeline?</div>
+          <div class="q">CMK preference — bank HSM-backed CMK or platform-managed key for AKS / ACR / Storage?</div>
+          <div class="q">Image signing &amp; verification — cosign + Ratify acceptable, or is Notary v2 the mandate?</div>
+          <div class="q">PII handling in app logs — what is the redaction expectation for Fluent Bit before logs leave the cluster?</div>
+          <div class="q">Penetration test cadence — annual external, quarterly internal, or per-release?</div>
+        </div>
+      </div>
+
+      <!-- For ACI vendor -->
+      <div class="mb-2">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="chip chip-ok">ACI vendor — UP Framework</span>
+        </div>
+        <div class="pl-card vendor">
+          <div class="q">Supported AKS Kubernetes version range for UP-FW v5.1.3 — is there a tested minor version we should pin?</div>
+          <div class="q">Is Istio mandatory, optional, or one of several supported meshes? Linkerd? Cilium service mesh? No mesh?</div>
+          <div class="q">Pod Security profile compatibility — does every UP-FW microservice run cleanly under <code class="font-mono text-xs">restricted</code>, or only <code class="font-mono text-xs">baseline</code>?</div>
+          <div class="q">Container UID / non-root — are all images non-root, or do any require root?</div>
+          <div class="q">Required CRDs and operators — full inventory beyond RabbitMQ Cluster Operator?</div>
+          <div class="q">Postgres extensions and exact PG version range required by UP-FW?</div>
+          <div class="q">TLS termination point — at the Istio gateway, at the sidecar, or at the application? Is mTLS handled by Istio or app-level?</div>
+          <div class="q">Probes contract — startup, readiness, liveness — what does each return and what is the recommended timeout?</div>
+          <div class="q">Resource requests &amp; limits — do you publish a sizing matrix per microservice?</div>
+          <div class="q">Dependency graph — startup ordering between microservices and the messaging layer?</div>
+          <div class="q">Vendor recommended observability — does UP-FW emit OpenTelemetry, Prometheus-native, or both?</div>
+          <div class="q">Upgrade path — 5.1.3 → 5.2.x — is there a documented rolling upgrade procedure compatible with Helm?</div>
+          <div class="q">Support contract — do you support a private-only AKS deployment with no public egress to vendor diagnostic endpoints?</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 12 DECISIONS TO TAKE TODAY                                   -->
+    <!-- ============================================================ -->
+    <section id="decisions" class="scroll-mt-8">
+      <div class="flex items-baseline gap-6 mb-8 pb-4 border-b-2 rule-thick">
+        <span class="section-num text-7xl">12</span>
+        <h2 class="font-display text-3xl md:text-4xl tracking-tight" style="color: var(--ink);">Decisions we want to take in this session</h2>
+      </div>
+
+      <p class="text-base md:text-lg leading-relaxed text-[var(--ink-soft)] mb-8 max-w-3xl">
+        At minimum, we should leave the meeting with these items <em>locked</em>. If any one of them does not
+        clear consensus inside its slot, it goes to a one-page follow-up — not a re-debate.
+      </p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-01</div>
+          <h4 class="font-display text-lg mb-2">Three clusters: Dev / NP / Prod</h4>
+          <p class="text-xs text-[var(--ink-soft)]">NP holds SIT/UAT/PERF as namespaces. Prod is single-tenant.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-02</div>
+          <h4 class="font-display text-lg mb-2">Namespace tenancy in NP</h4>
+          <p class="text-xs text-[var(--ink-soft)]">Four-layer isolation: NetworkPolicy + Istio + Quota + PSA. PERF node-pool deferred.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-03</div>
+          <h4 class="font-display text-lg mb-2">Azure CNI Overlay + NPM at Day 0</h4>
+          <p class="text-xs text-[var(--ink-soft)]">Cilium dataplane re-evaluated at NP stage.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-04</div>
+          <h4 class="font-display text-lg mb-2">Private API server, ER-only access</h4>
+          <p class="text-xs text-[var(--ink-soft)]">No public hop in any path. Local accounts disabled.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-05</div>
+          <h4 class="font-display text-lg mb-2">AKS-managed Entra ID + Azure RBAC for K8s</h4>
+          <p class="text-xs text-[var(--ink-soft)]">Cluster-admin PIM-only. Six personas mapped in Part 02.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-06</div>
+          <h4 class="font-display text-lg mb-2">Workload Identity for pods, Vault for secrets</h4>
+          <p class="text-xs text-[var(--ink-soft)]">No long-lived credentials in pod filesystem or env.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-07</div>
+          <h4 class="font-display text-lg mb-2">Two SPNs per env, OIDC-federated from CloudBees</h4>
+          <p class="text-xs text-[var(--ink-soft)]">Terraform applier + Helm deployer. No static client secrets.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-08</div>
+          <h4 class="font-display text-lg mb-2">PSA: baseline (Dev/NP), restricted (Prod)</h4>
+          <p class="text-xs text-[var(--ink-soft)]">Vendor confirmation pending — falls back to baseline if needed.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-09</div>
+          <h4 class="font-display text-lg mb-2">Admission engine: Kyverno (pending Cyber)</h4>
+          <p class="text-xs text-[var(--ink-soft)]">If Cyber mandates Gatekeeper, pivot — both produce the same outcome.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider text-[var(--blue-deep)] mb-2">DEC-T-10</div>
+          <h4 class="font-display text-lg mb-2">Single Terraform repo, one module per resource type</h4>
+          <p class="text-xs text-[var(--ink-soft)]">Pipeline split by environment, not by resource type.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--ink); color: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider mb-2 opacity-70">DEC-T-11</div>
+          <h4 class="font-display text-lg mb-2">Day 0 / 1 / 2 RACI baseline</h4>
+          <p class="text-xs opacity-90">Pre-filled in §10. Each team owner confirms or pushes back inside the meeting.</p>
+        </div>
+
+        <div class="border-2 rule-thick p-5" style="background: var(--ink); color: var(--paper);">
+          <div class="font-mono text-xs uppercase tracking-wider mb-2 opacity-70">DEC-T-12</div>
+          <h4 class="font-display text-lg mb-2">Parking lot owners assigned</h4>
+          <p class="text-xs opacity-90">Microsoft / Cyber / ACI vendor — each list has a named owner with a target close date.</p>
+        </div>
+
+      </div>
+
+      <div class="mt-10 border-l-4 pl-6 py-3" style="border-color: var(--blue);">
+        <div class="text-xs font-mono uppercase tracking-wider text-[var(--blue-deep)] mb-2">After this session</div>
+        <p class="text-sm text-[var(--ink-soft)]">Twelve locked decisions, three escalation lists with owners, and a pre-filled RACI is enough to start
+        Part 01 (Architecture &amp; Maturity) cleanly. The Terraform module work begins only after the parking-lot
+        items that <em>block provisioning</em> close — others can close in parallel with build.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============== FOOTER ============== -->
+<footer class="border-t-2 rule-thick mt-20 relative z-10" style="background: var(--ink); color: var(--paper);">
+  <div class="max-w-[1400px] mx-auto px-6 lg:px-10 py-10 grid md:grid-cols-3 gap-8 text-sm">
+    <div>
+      <div class="font-display text-2xl mb-2">UP-FW v5.1.3 · AKS Landing</div>
+      <p class="text-xs opacity-70">Pre-Design Discussion Brief · Part 00 of 03 · Internal use only.</p>
+    </div>
+    <div>
+      <div class="font-mono text-xs uppercase tracking-wider opacity-70 mb-2">Document control</div>
+      <ul class="text-xs space-y-1 opacity-90">
+        <li>ID: ADD-AKS-000</li>
+        <li>Revision: Draft 0.1</li>
+        <li>Date: 2026-05-01</li>
+        <li>Owner: Cluster design lead</li>
+      </ul>
+    </div>
+    <div>
+      <div class="font-mono text-xs uppercase tracking-wider opacity-70 mb-2">Series</div>
+      <ul class="text-xs space-y-1 opacity-90">
+        <li>00 — Pre-design Discussion Brief (this document)</li>
+        <li>01 — Architecture &amp; Maturity</li>
+        <li>02 — RBAC with Entra ID</li>
+        <li>03 — Namespace Strategy</li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<!-- ============== JS ============== -->
+<script>
+  // Active section highlight in side nav
+  const navLinks = document.querySelectorAll('.nav-link');
+  const sections = Array.from(navLinks)
+    .map(l => document.querySelector(l.getAttribute('href')))
+    .filter(Boolean);
+
+  function setActive() {
+    const y = window.scrollY + 120;
+    let current = sections[0];
+    sections.forEach(s => { if (s.offsetTop <= y) current = s; });
+    navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + (current && current.id)));
+  }
+  window.addEventListener('scroll', setActive, { passive: true });
+  setActive();
+</script>
+
+</body>
+</html>
