@@ -1,0 +1,207 @@
+
+## Diagram 1: Infrastructure Connectivity (Low-Level Design)
+
+**Design Rationale:** This diagram maps the physical and logical network path from on-premises into Azure. The flow reads top-to-bottom: on-prem → ExpressRoute → Hub VNet → Spoke VNet peering → the three subnets. Private Endpoints are shown as lateral connections from the AKS subnet to their respective PaaS services, reinforcing the "no public endpoint" constraint. The three subnets are represented as flat peer nodes within a subgraph to avoid deep nesting while still communicating containment.
+
+```mermaid
+graph TD
+    subgraph OnPrem["On-Premises Network"]
+        DC[Corporate Data Centre]
+        CB_AGENTS[CloudBees Agent Pool]
+        VDI[VDI Jump Hosts]
+    end
+
+    subgraph Hub["Azure Hub VNet"]
+        ER_GW[ExpressRoute Gateway]
+        HUB_FW[Azure Firewall / Hub Router]
+    end
+
+    subgraph Spoke["AKS Spoke VNet - newzealandnorth"]
+        SN_HUB[Hub-Connected Subnet]
+        SN_AKS[AKS Node Subnet]
+        SN_PE[Private Endpoint Subnet]
+    end
+
+    subgraph PaaS["Azure PaaS Services - Private"]
+        AKV[Azure Key Vault]
+        ACR[Azure Container Registry]
+        SFTP[Azure Storage - SFTP]
+        PG_VMs[PostgreSQL Azure VMs x3]
+    end
+
+    DC -->|ExpressRoute Circuit| ER_GW
+    CB_AGENTS -->|ExpressRoute Circuit| ER_GW
+    VDI -->|ExpressRoute Circuit| ER_GW
+    ER_GW --> HUB_FW
+    HUB_FW -->|VNet Peering| SN_HUB
+    SN_HUB --> SN_AKS
+    SN_HUB --> SN_PE
+    SN_AKS -->|AKS Node Traffic| SN_PE
+    SN_PE -->|Private Endpoint| AKV
+    SN_PE -->|Private Endpoint| ACR
+    SN_PE -->|Private Endpoint| SFTP
+    SN_AKS -->|VM NIC - Internal| PG_VMs
+```
+
+---
+
+## Diagram 2: Management & Control Plane (High-Level Design)
+
+**Design Rationale:** This diagram separates two distinct access patterns — **human access** and **automation access** — into clearly distinguishable flows. Current-state paths are shown as standard arrows. Target-state paths (direct kubectl via VDI) are annotated inline. The CloudBees automation path shows the full pipeline chain: Stash → Agent → proxy/ER → AKS API and registry targets. On-prem dependencies (Venafi, TFE) are shown as lateral calls from CloudBees to reinforce that they never leave the on-prem boundary.
+
+```mermaid
+graph TD
+    subgraph HumanAccess["Human Access Paths"]
+        LAPTOP[Admin Laptop - SSO]
+        VDI[VDI Jump Host]
+        PORTAL[Azure Portal - Read Only]
+    end
+
+    subgraph AutomationAccess["Automation - CloudBees Pipeline"]
+        STASH[Stash On-Prem SCM]
+        CB[CloudBees Agent - On-Prem]
+        TFE[TF Enterprise Registry - On-Prem]
+        VENAFI[Venafi CA - On-Prem]
+    end
+
+    subgraph AzureTargets["Azure Targets - newzealandnorth"]
+        AKS_API[AKS Private API Server]
+        ACR[Azure Container Registry]
+        AKV[Azure Key Vault]
+        STORAGE[Azure Storage - SFTP]
+    end
+
+    LAPTOP -->|SSO - Read Only| PORTAL
+    LAPTOP -->|RDP / Citrix| VDI
+    VDI -->|kubectl - Target State via ExpressRoute| AKS_API
+
+    STASH -->|Webhook Trigger| CB
+    CB -->|Terraform Apply via Proxy / ExpressRoute| AKS_API
+    CB -->|Docker Push via Proxy / ExpressRoute| ACR
+    CB -->|Request TLS Cert| VENAFI
+    CB -->|Source Modules| TFE
+    CB -->|Read Secrets| AKV
+    CB -->|Artifact Transfer| STORAGE
+```
+
+---
+
+## Diagram 3: Logical Namespace Management (Environment Design)
+
+**Design Rationale:** Subgraphs are used once and deliberately — to distinguish **system/platform namespaces** from **workload namespaces**, and within workload namespaces to separate the Single Stack (Dev) cluster from the Full Stack (Test/Prod) cluster. This reflects the architectural split described in `02-aks-baseline.md`. Namespace nodes are kept flat within each subgraph. Kyverno is shown enforcing policy across all workload namespaces via a single cross-cutting edge to avoid repetition.
+
+```mermaid
+graph TD
+    subgraph SystemNS["System Namespaces - Both Cluster Types"]
+        KS[kube-system]
+        KYV[kyverno]
+        ISTIO[istio-system]
+        CM[cert-manager]
+        KEDA[keda]
+        SECRETS[secrets-store-csi]
+    end
+
+    subgraph SingleStack["Single Stack Cluster - Dev / Some Test - 1 AZ"]
+        DEV1[dev-env-1]
+        DEV2[dev-env-2]
+        TEST_S[test-env-single]
+    end
+
+    subgraph FullStack["Full Stack Cluster - Multi-AZ HA - Test and Prod"]
+        TEST_A[test-env-alpha]
+        TEST_B[test-env-beta]
+        PROD[prod-env-main]
+    end
+
+    KYV -->|Enforces Pod Security Restricted| DEV1
+    KYV -->|Enforces Pod Security Restricted| DEV2
+    KYV -->|Enforces Pod Security Restricted| TEST_S
+    KYV -->|Enforces Pod Security Restricted| TEST_A
+    KYV -->|Enforces Pod Security Restricted| TEST_B
+    KYV -->|Enforces Pod Security Restricted| PROD
+
+    ISTIO -->|mTLS + Ingress Gateway| DEV1
+    ISTIO -->|mTLS + Ingress Gateway| DEV2
+    ISTIO -->|mTLS + Ingress Gateway| PROD
+
+    CM -->|TLS Cert Injection via Venafi| ISTIO
+    KEDA -->|Queue-Based Autoscaling| PROD
+    KEDA -->|Queue-Based Autoscaling| TEST_A
+    SECRETS -->|CSI Volume Mount| DEV1
+    SECRETS -->|CSI Volume Mount| PROD
+```
+
+---
+
+## Diagram 4: Security AAA & Secrets Flow (Sequence Diagram)
+
+**Design Rationale:** This uses `sequenceDiagram` syntax, which is the clearest format for a multi-actor authentication handshake. The sequence faithfully models the Workload Identity + Secrets Store CSI Driver flow: the pod first exchanges its projected Service Account token with Entra ID for a scoped JWT, then presents that JWT to Azure Key Vault via the CSI driver. The secret is never passed through the application directly — it is mounted as an in-memory volume file, reinforcing the least-privilege principle. Notes are used to annotate the key trust boundary.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Pod as App Pod
+    participant K8s as Kubernetes API
+    participant Entra as Entra ID (OIDC)
+    participant CSI as Secrets Store CSI Driver
+    participant AKV as Azure Key Vault
+
+    Pod->>K8s: Mount projected Service Account token
+    K8s-->>Pod: Projected JWT (short-lived, audience-scoped)
+
+    Note over Pod,Entra: Workload Identity Token Exchange
+
+    Pod->>Entra: POST /token (projected JWT + client assertion)
+    Entra-->>Pod: Azure AD access token (scoped to AKV)
+
+    Note over CSI,AKV: CSI Driver acts on behalf of Pod
+
+    Pod->>CSI: Request secret volume mount
+    CSI->>AKV: GET secret (present Azure AD access token)
+    AKV-->>CSI: Return secret value (authorised)
+    CSI-->>Pod: Mount secret as in-memory tmpfs file
+
+    Note over Pod: Pod reads secret from /mnt/secrets/. Secret never in env vars.
+```
+
+---
+
+## Diagram 5: Observability & Metric Data Flow (High-Level Design)
+
+**Design Rationale:** This diagram cleanly separates the **log pipeline** (Fluent Bit → ELK/Splunk) from the **metrics pipeline** (Prometheus → Dynatrace). Both pipelines share the same egress path (ExpressRoute) but terminate at distinct on-premises consumers, which is accurately modelled here. Istio sidecars are shown as an intermediate enrichment stage for log metadata before Fluent Bit collection, matching the architecture where Istio generates access logs and telemetry consumed by the broader observability stack.
+
+```mermaid
+graph TD
+    subgraph AKSCluster["AKS Cluster - newzealandnorth"]
+        APP_PODS[Application Pods - ACI UPF Microservices]
+        OP_PODS[Operator Pods - Istio / KEDA / cert-manager]
+        SIDECARS[Istio Sidecars - Envoy Proxy]
+        FLUENT[Fluent Bit DaemonSet]
+        PROM[Prometheus Operator]
+        NODE_METRICS[Node / kubelet Metrics]
+    end
+
+    subgraph EgressPath["Egress - ExpressRoute"]
+        ER[ExpressRoute Circuit]
+    end
+
+    subgraph OnPremObservability["On-Premises Observability Stack"]
+        ELK[ELK Stack - Log Analytics]
+        SPLUNK[Splunk - Security / Audit Logs]
+        DYNATRACE[Dynatrace - APM / Infrastructure]
+    end
+
+    APP_PODS -->|Stdout / Stderr Logs| SIDECARS
+    OP_PODS -->|Stdout / Stderr Logs| FLUENT
+    SIDECARS -->|Enriched Access Logs + Telemetry| FLUENT
+    FLUENT -->|Forwarded Log Streams| ER
+
+    NODE_METRICS -->|Scrape - kubelet / cAdvisor| PROM
+    APP_PODS -->|Scrape - ServiceMonitor| PROM
+    OP_PODS -->|Scrape - PodMonitor| PROM
+    PROM -->|Remote Write / Metric Export| ER
+
+    ER -->|Log Stream| ELK
+    ER -->|Audit and Security Events| SPLUNK
+    ER -->|Metrics and Traces| DYNATRACE
+```
