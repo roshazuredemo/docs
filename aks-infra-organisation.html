@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS Platform Infrastructure Organisation</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cf-blue: #0052CC;
+  --cf-blue-light: #DEEBFF;
+  --cf-green: #006644;
+  --cf-green-light: #E3FCEF;
+  --cf-amber: #FF8B00;
+  --cf-amber-light: #FFFAE6;
+  --cf-red: #BF2600;
+  --cf-red-light: #FFEBE6;
+  --cf-purple: #403294;
+  --cf-purple-light: #EAE6FF;
+  --cf-teal: #008DA6;
+  --cf-teal-light: #E6FCFF;
+  --text-primary: #172B4D;
+  --text-secondary: #5E6C84;
+  --text-light: #7A869A;
+  --border: #DFE1E6;
+  --border-mid: #C1C7D0;
+  --bg-page: #F4F5F7;
+  --bg-white: #FFFFFF;
+  --bg-subtle: #F8F9FA;
+  --font: 'Source Sans 3', -apple-system, sans-serif;
+  --font-mono: 'Source Code Pro', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);font-size:15px;line-height:1.75;color:var(--text-primary);background:var(--bg-page)}
+
+/* NAV */
+.topbar{background:var(--cf-blue);color:#fff;padding:11px 36px;display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:200}
+.topbar-brand{font-size:14px;font-weight:600;white-space:nowrap}
+.topbar-nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;justify-content:center}
+.topbar-nav::-webkit-scrollbar{display:none}
+.topbar-nav a{display:block;padding:5px 11px;color:rgba(255,255,255,.72);text-decoration:none;font-size:13px;font-weight:500;border-radius:3px;white-space:nowrap;transition:background .15s,color .15s}
+.topbar-nav a:hover{background:rgba(255,255,255,.15);color:#fff}
+.topbar-meta{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.badge{background:rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;white-space:nowrap}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:210px 1fr;max-width:1260px;margin:0 auto}
+@media(max-width:860px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
+
+/* SIDEBAR */
+.sidebar{padding:28px 0 28px 20px;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto;scrollbar-width:thin}
+.sb-label{font-size:11px;font-weight:600;color:var(--text-light);letter-spacing:.8px;text-transform:uppercase;padding:0 10px;margin:0 0 5px}
+.sb-links{list-style:none;margin-bottom:24px}
+.sb-links a{display:block;padding:5px 10px;font-size:13px;color:var(--text-secondary);text-decoration:none;border-radius:3px;border-left:2px solid transparent;line-height:1.4;transition:all .15s}
+.sb-links a:hover,.sb-links a.active{background:var(--cf-blue-light);color:var(--cf-blue);border-left-color:var(--cf-blue)}
+.sb-links a.active{font-weight:500}
+
+/* MAIN */
+.main{background:var(--bg-white);min-height:100vh;padding:36px 52px 80px;border-left:1px solid var(--border)}
+@media(max-width:860px){.main{padding:24px 18px 60px}}
+
+/* PAGE TITLE */
+.page-title-block{border-bottom:2px solid var(--border);padding-bottom:24px;margin-bottom:36px}
+.breadcrumb{font-size:12px;color:var(--text-light);margin-bottom:8px;display:flex;gap:5px;align-items:center}
+.page-title{font-size:26px;font-weight:600;color:var(--text-primary);line-height:1.2;margin-bottom:10px}
+.page-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary)}
+
+/* SECTIONS */
+.section{margin-bottom:52px;scroll-margin-top:72px}
+.section-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px;padding-bottom:9px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.section h2{font-size:20px;font-weight:600;color:var(--text-primary)}
+.section h3{font-size:16px;font-weight:600;color:var(--text-primary);margin:24px 0 10px}
+.section p{color:var(--text-secondary);font-size:15px;line-height:1.75;margin-bottom:12px;max-width:780px}
+.section-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;font-size:12px;font-weight:500;font-family:var(--font);border:1px solid var(--border-mid);border-radius:3px;background:var(--bg-white);color:var(--text-secondary);cursor:pointer;transition:all .15s;white-space:nowrap;text-decoration:none}
+.btn:hover{background:var(--bg-subtle);border-color:var(--text-light);color:var(--text-primary)}
+.btn-blue{background:var(--cf-blue);border-color:var(--cf-blue);color:#fff}
+.btn-blue:hover{background:#0065FF;border-color:#0065FF;color:#fff}
+.btn.copied{background:var(--cf-green-light);border-color:#ABF5D1;color:var(--cf-green)}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;margin:14px 0 22px;border:1px solid var(--border);border-radius:4px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead th{background:var(--bg-subtle);color:var(--text-primary);font-weight:600;font-size:11.5px;letter-spacing:.3px;text-transform:uppercase;padding:10px 13px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap}
+tbody td{padding:10px 13px;color:var(--text-secondary);border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#F8FAFF}
+
+/* TAGS */
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:500;white-space:nowrap}
+.tag-blue{background:var(--cf-blue-light);color:var(--cf-blue)}
+.tag-green{background:var(--cf-green-light);color:var(--cf-green)}
+.tag-amber{background:var(--cf-amber-light);color:var(--cf-amber)}
+.tag-red{background:var(--cf-red-light);color:var(--cf-red)}
+.tag-purple{background:var(--cf-purple-light);color:var(--cf-purple)}
+.tag-teal{background:var(--cf-teal-light);color:var(--cf-teal)}
+.tag-gray{background:#F1F2F4;color:var(--text-secondary)}
+
+/* PANELS */
+.panel{padding:13px 17px;border-radius:3px;border-left:4px solid;margin:14px 0 18px;font-size:14px;line-height:1.65}
+.panel-title{font-weight:600;font-size:12.5px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.panel-info{background:var(--cf-blue-light);border-color:var(--cf-blue);color:#0747A6}
+.panel-info .panel-title{color:var(--cf-blue)}
+.panel-warn{background:var(--cf-amber-light);border-color:var(--cf-amber);color:#172B4D}
+.panel-warn .panel-title{color:var(--cf-amber)}
+.panel-success{background:var(--cf-green-light);border-color:var(--cf-green);color:#172B4D}
+.panel-success .panel-title{color:var(--cf-green)}
+.panel-danger{background:var(--cf-red-light);border-color:var(--cf-red);color:#172B4D}
+.panel-danger .panel-title{color:var(--cf-red)}
+
+/* DIAGRAM BLOCKS */
+.diagram-block{border:1px solid var(--border);border-radius:4px;margin:18px 0 26px;overflow:hidden}
+.diagram-header{background:var(--bg-subtle);border-bottom:1px solid var(--border);padding:10px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.diagram-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+.diagram-subtitle{font-size:12px;color:var(--text-light);margin-top:1px}
+.diagram-actions{display:flex;gap:6px;flex-wrap:wrap}
+.cf-hint{background:#FFFAE6;border-top:1px solid #FFE380;padding:7px 15px;font-size:12px;color:#172B4D;display:flex;gap:8px;align-items:flex-start}
+.cf-hint strong{color:var(--cf-amber)}
+.code-area{background:#F8F9FA;border-top:1px solid var(--border);padding:14px;max-height:300px;overflow-y:auto}
+.code-area pre{font-family:var(--font-mono);font-size:12px;line-height:1.7;color:var(--text-primary);white-space:pre;tab-size:2}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:860px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* CARDS */
+.card{background:var(--bg-white);border:1px solid var(--border);border-radius:4px;padding:15px 17px}
+.card-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:7px}
+.card-body{font-size:13.5px;color:var(--text-secondary);line-height:1.65}
+
+/* SUBSCRIPTION BOXES */
+.tenant-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0}
+@media(max-width:860px){.tenant-row{grid-template-columns:1fr}}
+.tenant-box{border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.tenant-header{padding:10px 16px;font-size:14px;font-weight:600;letter-spacing:.3px;border-bottom:1px solid var(--border)}
+.tenant-np .tenant-header{background:#EAF1FF;color:var(--cf-blue)}
+.tenant-p .tenant-header{background:#E3FCEF;color:var(--cf-green)}
+.tenant-p{border-color:#ABF5D1}
+.sub-box{margin:10px;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.sub-header{padding:7px 12px;font-size:12.5px;font-weight:600;background:var(--bg-subtle);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sub-items{padding:10px 12px;font-size:13px;color:var(--text-secondary)}
+.sub-items span{display:inline-block;margin:2px 4px 2px 0}
+
+/* NODE POOL TABLE */
+.np-table{margin:16px 0}
+.np-row{display:grid;grid-template-columns:140px 1fr;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;overflow:hidden}
+.np-label{padding:12px 14px;font-size:13px;font-weight:600;border-right:1px solid var(--border);display:flex;align-items:center}
+.np-label.sys{background:#E3FCEF;color:var(--cf-green)}
+.np-label.plat{background:var(--cf-blue-light);color:var(--cf-blue)}
+.np-label.app{background:var(--cf-purple-light);color:var(--cf-purple)}
+.np-content{padding:10px 14px;font-size:13px;color:var(--text-secondary);background:var(--bg-white)}
+.np-ns{display:flex;flex-wrap:wrap;gap:5px}
+
+/* ENV MAPPING */
+.env-strip{border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.env-strip-header{padding:9px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:var(--bg-subtle)}
+.env-strip-name{font-size:14px;font-weight:600;color:var(--text-primary)}
+.env-strip-sub{margin-left:auto;font-size:12px;color:var(--text-light)}
+.env-cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr))}
+.env-cell{padding:9px 13px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.env-cell:last-child{border-right:none}
+.env-cell-label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);margin-bottom:3px}
+.env-cell-val{font-size:12.5px;color:var(--text-secondary);font-family:var(--font-mono)}
+
+/* CODE */
+code{font-family:var(--font-mono);font-size:12.5px;background:#F1F2F4;color:var(--cf-blue);padding:1px 5px;border-radius:3px;border:1px solid var(--border)}
+
+/* IDENTITY CARD */
+.id-card{background:var(--bg-white);border:1px solid var(--border);border-left:3px solid var(--cf-blue);border-radius:3px;padding:12px 15px;margin-bottom:8px}
+.id-name{font-family:var(--font-mono);font-size:12.5px;color:var(--cf-blue);font-weight:500;margin-bottom:5px}
+.id-row{display:flex;gap:6px;font-size:13px;color:var(--text-secondary);margin-bottom:3px;flex-wrap:wrap}
+.id-row strong{color:var(--text-primary);font-weight:500;min-width:70px}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:36px 0}
+
+/* FOOTER */
+.footer{background:var(--bg-subtle);border-top:1px solid var(--border);padding:18px 36px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-light);flex-wrap:wrap;gap:8px}
+
+/* TOP BTN */
+#top-btn{position:fixed;bottom:26px;right:26px;z-index:100;width:38px;height:38px;background:var(--cf-blue);border:none;border-radius:50%;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .25s;text-decoration:none;box-shadow:0 2px 8px rgba(0,82,204,.3)}
+#top-btn.visible{opacity:1}
+#top-btn:hover{background:#0065FF}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">AKS Platform — Infrastructure Organisation</div>
+  <nav class="topbar-nav">
+    <a href="#overview">Overview</a>
+    <a href="#tenants">Tenants</a>
+    <a href="#subscriptions">Subscriptions</a>
+    <a href="#network">Network</a>
+    <a href="#clusters">Clusters</a>
+    <a href="#namespaces">Namespaces</a>
+    <a href="#environments">Environments</a>
+    <a href="#identity">Identity & RBAC</a>
+    <a href="#env-map">Resource Map</a>
+  </nav>
+  <div class="topbar-meta">
+    <span class="badge">v1.0 Draft</span>
+    <span class="badge">Internal</span>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sb-label">On this page</div>
+    <ul class="sb-links">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#tenants">Tenant Strategy</a></li>
+      <li><a href="#subscriptions">Subscription Organisation</a></li>
+      <li><a href="#network">Network Design</a></li>
+      <li><a href="#clusters">AKS Cluster Design</a></li>
+      <li><a href="#namespaces">Namespace & Node Pool Layout</a></li>
+      <li><a href="#environments">Environment Strategy</a></li>
+      <li><a href="#identity">Identity & RBAC</a></li>
+      <li><a href="#env-map">Environment Resource Map</a></li>
+    </ul>
+    <div class="sb-label">Diagrams</div>
+    <ul class="sb-links">
+      <li><a href="#diag1">Diagram 1 — Tenant & Subscription</a></li>
+      <li><a href="#diag2">Diagram 2 — Subscription Layout</a></li>
+      <li><a href="#diag3">Diagram 3 — Cluster Node Pools</a></li>
+      <li><a href="#diag4">Diagram 4 — Environment Mapping</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+
+    <div class="page-title-block">
+      <div class="breadcrumb">Platform Engineering › Architecture › <span style="color:var(--border-mid)">AKS Infrastructure Organisation</span></div>
+      <h1 class="page-title">AKS Platform — Infrastructure Organisation</h1>
+      <div class="page-meta">
+        <span>📅 v1.0 · Draft</span>
+        <span>🔒 Internal — Restricted</span>
+        <span>🌏 Azure New Zealand North</span>
+        <span>☁️ 2 Tenants · 3 Subscriptions · 3 Clusters</span>
+      </div>
+    </div>
+
+    <!-- ===== OVERVIEW ===== -->
+    <section class="section" id="overview">
+      <div class="section-title-row">
+        <h2>Overview</h2>
+        <div class="section-actions">
+          <button class="btn" onclick="copySection('overview-body',this)">📋 Copy</button>
+        </div>
+      </div>
+      <div id="overview-body">
+        <p>This document describes how the AKS platform is organised from the top of the Azure structure down to individual Kubernetes namespaces. The intent is to give any team member — engineer or architect — a clear mental model of where things live and why.</p>
+        <p>The platform is spread across two Entra ID tenants and three Azure subscriptions. Each subscription maps to a stage of the delivery pipeline — Dev, Test, and Prod — and contains a dedicated AKS cluster, a shared resource group for common services, and environment-specific resource groups for databases and file storage. Inside each cluster, workloads are isolated by Kubernetes namespace, one per environment.</p>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-title">🏢 2 Entra ID Tenants</div>
+            <div class="card-body">Non-Prod and Prod tenants provide a hard identity boundary. Dev and Test subscriptions sit in Non-Prod. Production sits in its own tenant.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">📦 3 Subscriptions</div>
+            <div class="card-body">Dev, Test, and Prod — one per delivery stage. Each subscription is the Landing Zone unit and comes with a pre-allocated VNet and 3 subnets.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">⚙️ 3 AKS Clusters</div>
+            <div class="card-body">One cluster per subscription. Environments are separated by Kubernetes namespace within each cluster, not by separate clusters.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== TENANTS ===== -->
+    <section class="section" id="tenants">
+      <div class="section-title-row">
+        <h2>Tenant Strategy</h2>
+        <div class="section-actions">
+          <button class="btn" onclick="copySection('tenants-body',this)">📋 Copy</button>
+        </div>
+      </div>
+      <div id="tenants-body">
+        <p>Two Entra ID tenants provide a hard boundary between non-production and production identities. All SPNs, Managed Identities, app registrations, and Entra groups in the Non-Prod tenant are completely separate from those in Prod. A credential leak in Non-Prod cannot be used against the production environment.</p>
+
+        <div class="tenant-row">
+          <div class="tenant-box tenant-np">
+            <div class="tenant-header">Non-Production Tenant</div>
+            <div class="sub-box">
+              <div class="sub-header"><span class="tag tag-blue">Dev Subscription</span></div>
+              <div class="sub-items">
+                <span class="tag tag-gray">ACR</span>
+                <span class="tag tag-gray">Key Vault</span>
+                <span class="tag tag-gray">Dev Cluster</span>
+                <span class="tag tag-gray">rg-app-sandbox</span>
+                <span class="tag tag-gray">rg-app-dev</span>
+              </div>
+            </div>
+            <div class="sub-box">
+              <div class="sub-header"><span class="tag tag-blue">Test Subscription</span></div>
+              <div class="sub-items">
+                <span class="tag tag-gray">ACR</span>
+                <span class="tag tag-gray">Key Vault</span>
+                <span class="tag tag-gray">Test Cluster</span>
+                <span class="tag tag-gray">rg-app-intgtest</span>
+                <span class="tag tag-gray">rg-app-systest</span>
+                <span class="tag tag-gray">rg-app-uat</span>
+                <span class="tag tag-gray">rg-app-perftest</span>
+              </div>
+            </div>
+          </div>
+          <div class="tenant-box tenant-p">
+            <div class="tenant-header">Production Tenant</div>
+            <div class="sub-box" style="border-color:#ABF5D1">
+              <div class="sub-header"><span class="tag tag-green">Prod Subscription</span></div>
+              <div class="sub-items">
+                <span class="tag tag-gray">ACR</span>
+                <span class="tag tag-gray">Key Vault</span>
+                <span class="tag tag-gray">Prod Cluster</span>
+                <span class="tag tag-gray">rg-app-prod</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-info">
+          <div class="panel-title">Why two tenants?</div>
+          A single tenant would mean a compromised Non-Prod SPN could potentially access Prod Key Vaults or ACR. Separate tenants make that impossible — there are no cross-tenant trust relationships configured.
+        </div>
+      </div>
+
+      <!-- DIAGRAM 1 -->
+      <div id="diag1" class="diagram-block">
+        <div class="diagram-header">
+          <div>
+            <div class="diagram-title">Diagram 1 — Tenant & Subscription Overview</div>
+            <div class="diagram-subtitle">Top-level view of tenants, subscriptions, and what lives in each</div>
+          </div>
+          <div class="diagram-actions">
+            <button class="btn" onclick="copyDiagram('mmd1',this)">📋 Copy Mermaid</button>
+            <button class="btn btn-blue" onclick="downloadMmd('diagram-1-tenant-subscription','mmd1')">⬇ Download .mmd</button>
+          </div>
+        </div>
+        <div class="cf-hint"><span>💡</span><span><strong>Confluence:</strong> Type <code>/mermaid</code> on your page and paste the copied code. Or download the <code>.mmd</code> file and import via draw.io → Extras → Edit Diagram → Mermaid.</span></div>
+        <div class="code-area"><pre id="mmd1">graph TB
+    classDef tenant fill:#F0F4FF,stroke:#0052CC,color:#172B4D
+    classDef np_sub fill:#DEEBFF,stroke:#0052CC,color:#0747A6
+    classDef prod_sub fill:#E3FCEF,stroke:#006644,color:#006644
+    classDef common fill:#EAE6FF,stroke:#403294,color:#403294
+    classDef env fill:#F4F5F7,stroke:#C1C7D0,color:#5E6C84
+    classDef hub fill:#FFFAE6,stroke:#FF8B00,color:#172B4D
+
+    HUB["Hub Subscription\nExpressRoute + Firewall\nShared Network Services"]:::hub
+
+    subgraph NP_TENANT["NON-PRODUCTION TENANT"]
+        direction LR
+        subgraph DEV_SUB["Dev Subscription"]
+            DEV_COMMON["rg-common-dev\nACR  •  Key Vault\nManaged Identities"]:::common
+            DEV_CLUSTER["AKS Dev Cluster\nSandbox  •  Dev"]:::np_sub
+            DEV_ENVS["rg-app-sandbox\nrg-app-dev\nDB + SFTP per env"]:::env
+        end
+        subgraph TEST_SUB["Test Subscription"]
+            TEST_COMMON["rg-common-test\nACR  •  Key Vault\nManaged Identities"]:::common
+            TEST_CLUSTER["AKS Test Cluster\nIntgTest  •  SysTest\nUAT  •  PerfTest"]:::np_sub
+            TEST_ENVS["rg-app-intgtest\nrg-app-systest\nrg-app-uat  •  rg-app-perftest"]:::env
+        end
+    end
+
+    subgraph PROD_TENANT["PRODUCTION TENANT"]
+        direction LR
+        subgraph PROD_SUB["Prod Subscription"]
+            PROD_COMMON["rg-common-prod\nACR  •  Key Vault\nManaged Identities"]:::common
+            PROD_CLUSTER["AKS Prod Cluster\nProd"]:::prod_sub
+            PROD_ENVS["rg-app-prod\nDB + SFTP"]:::env
+        end
+    end
+
+    HUB -->|"VNet Peering"| DEV_SUB
+    HUB -->|"VNet Peering"| TEST_SUB
+    HUB -->|"VNet Peering"| PROD_SUB
+    DEV_CLUSTER --- DEV_ENVS
+    TEST_CLUSTER --- TEST_ENVS
+    PROD_CLUSTER --- PROD_ENVS</pre></div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== SUBSCRIPTIONS ===== -->
+    <section class="section" id="subscriptions">
+      <div class="section-title-row">
+        <h2>Subscription Organisation</h2>
+        <div class="section-actions">
+          <button class="btn" onclick="copySection('subscriptions-body',this)">📋 Copy</button>
+        </div>
+      </div>
+      <div id="subscriptions-body">
+        <p>Each subscription follows the same resource group structure. This consistency makes pipelines reusable and makes it easy to reason about what is in each subscription without looking it up.</p>
+
+        <h3>Resource Group Structure (same pattern in all three subscriptions)</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Resource Group</th><th>What lives here</th><th>Shared or per-env?</th></tr></thead>
+            <tbody>
+              <tr><td><code>rg-network-{sub}</code></td><td>VNet, subnets, NSGs, route tables, Private DNS zones</td><td>Shared — one per subscription</td></tr>
+              <tr><td><code>rg-common-{sub}</code></td><td>ACR, Key Vault, Private Endpoints for both, Managed Identities</td><td>Shared — one per subscription</td></tr>
+              <tr><td><code>rg-aks-{sub}</code></td><td>AKS cluster resource, node pools, cluster Managed Identity</td><td>Shared — one per subscription</td></tr>
+              <tr><td><code>rg-app-{env}</code></td><td>PostgreSQL VM, Storage Account + SFTP file share for that environment</td><td>Per environment — one RG per env</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Common Resources (rg-common-{sub})</h3>
+        <p>ACR and Key Vault sit at the subscription level and are shared across all environments within that subscription. This avoids duplicating container image storage per environment. The Key Vault holds all secrets for all environments in that subscription, separated by a naming prefix per environment (e.g. <code>sandbox-db-connstr</code>, <code>dev-db-connstr</code>).</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Resource</th><th>Dev Sub</th><th>Test Sub</th><th>Prod Sub</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>ACR</td><td><code>devacr001</code></td><td><code>testacr001</code></td><td><code>prodacr001</code></td><td>Standard SKU for Dev/Test, Premium for Prod</td></tr>
+              <tr><td>Key Vault</td><td><code>dev-akv-001</code></td><td><code>test-akv-001</code></td><td><code>prod-akv-001</code></td><td>Secrets namespaced by env prefix</td></tr>
+              <tr><td>ACR access</td><td>AKS Managed Identity</td><td>AKS Managed Identity</td><td>AKS Managed Identity</td><td>AcrPull — manually assigned by Cloud Team</td></tr>
+              <tr><td>AKV access</td><td>Workload Identity per env</td><td>Workload Identity per env</td><td>Workload Identity per env</td><td>Mounted to pods via CSI Driver</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel panel-warn">
+          <div class="panel-title">Image Promotion</div>
+          Images are built once and pushed to the Dev subscription ACR. After validation they are promoted to Test ACR, then to Prod ACR — never rebuilt. The same binary that passed testing is what runs in production.
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== NETWORK ===== -->
+    <section class="section" id="network">
+      <div class="section-title-row">
+        <h2>Network Design</h2>
+        <div class="section-actions">
+          <button class="btn" onclick="copySection('network-body',this)">📋 Copy</button>
+        </div>
+      </div>
+      <div id="network-body">
+        <p>Each subscription gets one VNet pre-allocated by the Azure Landing Zone team. The VNet is connected to the Hub VNet via peering, which routes traffic to on-premises via ExpressRoute. All Azure resources are provisioned as private — no public IPs, no public endpoints.</p>
+
+        <h3>VNet & Subnet Layout (same in all three subscriptions)</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Subnet</th><th>Purpose</th><th>Example CIDR</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>snet-vm</code></td>
+                <td>Virtual machines — PostgreSQL database VMs, any other IaaS VMs. These are in the same VNet as AKS so pods reach them directly by private IP without a Private Endpoint.</td>
+                <td><code>10.x.0.0/24</code></td>
+              </tr>
+              <tr>
+                <td><code>snet-services</code></td>
+                <td>Private Endpoints for PaaS services — ACR, Key Vault, Storage Accounts (SFTP). All PaaS resources project into this subnet as a private IP so they are never reachable over the public internet.</td>
+                <td><code>10.x.1.0/24</code></td>
+              </tr>
+              <tr>
+                <td><code>snet-aks</code></td>
+                <td>AKS node pools. All cluster nodes (system, platform, application) run in this subnet. Pod-to-pod and pod-to-VM traffic stays within the VNet.</td>
+                <td><code>10.x.2.0/22</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Key Connectivity Rules</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>From</th><th>To</th><th>How</th></tr></thead>
+            <tbody>
+              <tr><td>On-premises / CloudBees agents</td><td>AKS API server, ACR, Key Vault</td><td>ExpressRoute → Hub VNet → VNet peering → Spoke VNet. All port 443. Requires explicit firewall rule approval.</td></tr>
+              <tr><td>AKS pods</td><td>PostgreSQL VMs</td><td>Direct within VNet — pod on snet-aks reaches VM on snet-vm by private IP. Port 5432. No Private Endpoint needed.</td></tr>
+              <tr><td>AKS pods</td><td>Key Vault, ACR, Storage</td><td>Private Endpoint in snet-services. Resolved via Private DNS. No internet traversal.</td></tr>
+              <tr><td>On-premises physical clients</td><td>SFTP Storage</td><td>ExpressRoute → Hub → Private Endpoint in snet-services. Port 22.</td></tr>
+              <tr><td>AKS nodes (all)</td><td>On-prem observability (ELK, Dynatrace)</td><td>ExpressRoute return path. Requires firewall rules for log/metrics forwarding ports.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel panel-info">
+          <div class="panel-title">Default-deny posture</div>
+          The Hub firewall blocks everything by default. Every connectivity path above requires an explicit firewall rule submitted to the Cloud Team before it will work. Plan and submit all rules as a batch before beginning cluster provisioning.
+        </div>
+      </div>
+
+      <!-- DIAGRAM 2 -->
+      <div id="diag2" class="diagram-block">
+        <div class="diagram-header">
+          <div>
+            <div class="diagram-title">Diagram 2 — Subscription Network & Resource Group Layout</div>
+            <div class="diagram-subtitle">VNet, subnets, hub peering, and resource group organisation within one subscription (pattern repeats for all three)</div>
+          </div>
+          <div class="diagram-actions">
+            <button class="btn" onclick="copyDiagram('mmd2',this)">📋 Copy Mermaid</button>
+            <button class="btn btn-blue" onclick="downloadMmd('diagram-2-subscription-network','mmd2')">⬇ Download .mmd</button>
+          </div>
+        </div>
+        <div class="cf-hint"><span>💡</span><span><strong>Confluence:</strong> Type <code>/mermaid</code> and paste the copied code.</span></div>
+        <div class="code-area"><pre id="mmd2">graph TB
+    classDef hub fill:#FFFAE6,stroke:#FF8B00,color:#172B4D
+    classDef vnet fill:#F0F4FF,stroke:#0052CC,color:#172B4D
+    classDef subnet fill:#DEEBFF,stroke:#0052CC,color:#0747A6
+    classDef rg fill:#F4F5F7,stroke:#C1C7D0,color:#5E6C84
+    classDef common fill:#EAE6FF,stroke:#403294,color:#403294
+    classDef aks fill:#E3FCEF,stroke:#006644,color:#006644
+    classDef pe fill:#E6FCFF,stroke:#008DA6,color:#008DA6
+
+    ONPREM["On-Premises\nCloudBees  •  VDI  •  Physical Clients"]:::hub
+    HUB["Hub Subscription\nExpressRoute Gateway\nAzure Firewall"]:::hub
+
+    subgraph SPOKE["Spoke VNet  —  e.g. 10.10.0.0/16  (repeats per subscription)"]
+        direction TB
+        SNET_VM["snet-vm  10.x.0.0/24\nPostgreSQL VMs  •  IaaS compute"]:::subnet
+        SNET_SVC["snet-services  10.x.1.0/24\nPrivate Endpoints only\nACR  •  Key Vault  •  Storage SFTP"]:::pe
+        SNET_AKS["snet-aks  10.x.2.0/22\nAll AKS node pools\nSystem  •  Platform  •  Application"]:::subnet
+    end
+
+    subgraph RGS["Resource Groups"]
+        direction LR
+        RG_NET["rg-network-{sub}\nVNet  •  Subnets\nNSGs  •  DNS Zones"]:::rg
+        RG_COMMON["rg-common-{sub}\nACR  •  Key Vault\nManaged Identities"]:::common
+        RG_AKS["rg-aks-{sub}\nAKS Cluster\nNode Pools"]:::aks
+        RG_APP1["rg-app-{env1}\nPostgreSQL VMs\nStorage + SFTP"]:::rg
+        RG_APP2["rg-app-{env2}\nPostgreSQL VMs\nStorage + SFTP"]:::rg
+    end
+
+    ONPREM --> HUB
+    HUB -->|"VNet Peering\nAll traffic via Hub Firewall"| SPOKE
+    SNET_AKS -->|"Private IP  port 5432"| SNET_VM
+    SNET_AKS -->|"Private DNS resolution"| SNET_SVC
+    RG_COMMON -.->|"Private Endpoint"| SNET_SVC
+    RG_AKS -.-> SNET_AKS
+    RG_APP1 -.-> SNET_VM
+    RG_APP2 -.-> SNET_VM</pre></div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== CLUSTERS ===== -->
+    <section class="section" id="clusters">
+      <div class="section-title-row">
+        <h2>AKS Cluster Design</h2>
+        <div class="section-actions">
+          <button class="btn" onclick="copySection('clusters-body',this)">📋 Copy</button>
+        </div>
+      </div>
+      <div id="clusters-body">
+        <p>Each subscription has one AKS private cluster. The clusters differ in topology depending on the environments they serve — Dev is lightweight with a single AZ, Test is single-AZ but larger, Prod is multi-AZ for high availability.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Cluster</th><th>Subscription</th><th>AZ</th><th>Environments (namespaces)</th><th>System pool</th><th>Platform pool</th><th>App pool</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>aks-dev</code></td>
+                <td><span class="tag tag-blue">Dev</span></td>
+                <td>Single AZ</td>
+                <td>sandbox, dev</td>
+                <td>2 nodes</td>
+                <td>2 nodes</td>
+                <td>2–6 nodes (KEDA)</td>
+              </tr>
+              <tr>
+                <td><code>aks-test</code></td>
+                <td><span class="tag tag-blue">Test</span></td>
+                <td>Single AZ</td>
+                <td>intgtest, systest, uat, perftest</td>
+                <td>2 nodes</td>
+                <td>2 nodes</td>
+                <td>2–10 nodes (KEDA)</td>
+              </tr>
+              <tr>
+                <td><code>aks-prod</code></td>
+                <td><span class="tag tag-green">Prod</span></td>
+                <td>Multi-AZ (3)</td>
+                <td>prod</td>
+                <td>3 nodes (1/AZ)</td>
+                <td>3 nodes (1/AZ)</td>
+                <td>3–30 nodes (KEDA)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Three Node Pools — Why</h3>
+        <p>Separating workloads across node pools means cluster-level components cannot be evicted by application load, and application workloads cannot starve platform tooling. Each pool has its own scaling, instance type, and taint/toleration configuration.</p>
+
+        <div class="np-table">
+          <div class="np-row">
+            <div class="np-label sys">System<br>pool</div>
+            <div class="np-content">
+              Runs core Kubernetes components only. Tainted so application and platform pods cannot schedule here. Not auto-scaled — always on.
+              <div class="np-ns" style="margin-top:8px">
+                <span class="tag tag-green">kube-system</span>
+                <span style="font-size:12px;color:var(--text-light)">CoreDNS · kube-proxy · cloud-node-manager</span>
+              </div>
+            </div>
+          </div>
+          <div class="np-row">
+            <div class="np-label plat">Platform<br>pool</div>
+            <div class="np-content">
+              Runs all shared operator workloads. Tainted so application pods cannot schedule here unless explicitly tolerated. Fixed size — not event-driven autoscaled.
+              <div class="np-ns" style="margin-top:8px">
+                <span class="tag tag-blue">istio-system</span>
+                <span class="tag tag-blue">monitoring</span>
+                <span class="tag tag-blue">logging</span>
+                <span class="tag tag-blue">cert-manager</span>
+                <span class="tag tag-blue">rabbitmq-system</span>
+                <span class="tag tag-blue">opentelemetry</span>
+                <span class="tag tag-blue">jaeger</span>
+                <span class="tag tag-blue">keda</span>
+                <span class="tag tag-blue">secrets-store-csi</span>
+                <span class="tag tag-blue">kyverno</span>
+              </div>
+            </div>
+          </div>
+          <div class="np-row">
+            <div class="np-label app">Application<br>pool</div>
+            <div class="np-content">
+              Runs all application workloads. KEDA-autoscaled based on RabbitMQ queue depth. Pods are isolated per environment by namespace, NetworkPolicy, and ResourceQuota.
+              <div class="np-ns" style="margin-top:8px">
+                <span class="tag tag-purple">app-sandbox</span>
+                <span class="tag tag-purple">app-dev</span>
+                <span class="tag tag-purple">app-intgtest</span>
+                <span class="tag tag-purple">app-systest</span>
+                <span class="tag tag-purple">app-uat</span>
+                <span class="tag tag-purple">app-perftest</span>
+                <span class="tag tag-purple">app-prod</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== NAMESPACES ===== -->
+    <section class="section" id="namespaces">
+      <div class="section-title-row">
+        <h2>Namespace & Node Pool Layout</h2>
+        <div class="section-actions">
+          <button class="btn" onclick="copySection('namespaces-body',this)">📋 Copy</button>
+        </div>
+      </div>
+      <div id="namespaces-body">
+        <p>Every namespace is deployed to a specific node pool using node affinity and taints. This is enforced by Kyverno at admission time — a pod that does not declare the correct affinity is rejected.</p>
+
+        <h3>Full Namespace Reference</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Namespace</th><th>Node Pool</th><th>Component</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td><code>kube-system</code></td><td><span class="tag tag-green">System</span></td><td>CoreDNS, kube-proxy, cloud-node-manager</td><td>Managed by AKS — do not modify</td></tr>
+              <tr><td><code>kyverno</code></td><td><span class="tag tag-blue">Platform</span></td><td>Kyverno admission controller</td><td>Enforces all pod policies cluster-wide. Must be 3 replicas in prod (failurePolicy: Fail).</td></tr>
+              <tr><td><code>istio-system</code></td><td><span class="tag tag-blue">Platform</span></td><td>Istiod, Ingress Gateway</td><td>mTLS in STRICT mode. Canary upgrades only. Internal load balancer — no public IP.</td></tr>
+              <tr><td><code>cert-manager</code></td><td><span class="tag tag-blue">Platform</span></td><td>cert-manager</td><td>TLS via on-prem Venafi. Auto-renews certificates before expiry.</td></tr>
+              <tr><td><code>monitoring</code></td><td><span class="tag tag-blue">Platform</span></td><td>Prometheus Operator, Alertmanager</td><td>Scrapes metrics. Remote-writes to on-prem Dynatrace over ExpressRoute.</td></tr>
+              <tr><td><code>logging</code></td><td><span class="tag tag-blue">Platform</span> (deployed) / <span class="tag tag-gray">All nodes</span> (DaemonSet)</td><td>Fluent Bit</td><td>DaemonSet — one pod per node across all pools. Forwards logs to on-prem ELK and Splunk.</td></tr>
+              <tr><td><code>opentelemetry</code></td><td><span class="tag tag-blue">Platform</span></td><td>OpenTelemetry Collector</td><td>Collects traces and metrics from application pods. Exports to Jaeger and Dynatrace.</td></tr>
+              <tr><td><code>jaeger</code></td><td><span class="tag tag-blue">Platform</span></td><td>Jaeger Collector + Query UI</td><td>Receives trace spans via OTel Collector. Stores in-cluster for dev/test; backed storage for prod.</td></tr>
+              <tr><td><code>rabbitmq-system</code></td><td><span class="tag tag-blue">Platform</span></td><td>RabbitMQ Operator + Cluster</td><td>Shared message broker per cluster. Application namespaces connect to this. KEDA reads queue depth from here.</td></tr>
+              <tr><td><code>keda</code></td><td><span class="tag tag-blue">Platform</span></td><td>KEDA Operator</td><td>Event-driven autoscaler. Scales application pods based on RabbitMQ queue depth.</td></tr>
+              <tr><td><code>secrets-store-csi</code></td><td><span class="tag tag-blue">Platform</span></td><td>Secrets Store CSI Driver</td><td>Mounts Key Vault secrets into pods as files via Workload Identity. Only permitted secrets mechanism.</td></tr>
+              <tr><td><code>app-{env}</code></td><td><span class="tag tag-purple">Application</span></td><td>Application workloads</td><td>One namespace per environment. Each has its own NetworkPolicy, ResourceQuota, RBAC, and Workload Identity. Created dynamically by pipeline.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel panel-success">
+          <div class="panel-title">Fluent Bit note</div>
+          Fluent Bit is deployed as a DaemonSet to the <code>logging</code> namespace but runs a pod on every node across all three pools. This ensures no logs are missed regardless of which node pool a workload runs on.
+        </div>
+      </div>
+
+      <!-- DIAGRAM 3 -->
+      <div id="diag3" class="diagram-block">
+        <div class="diagram-header">
+          <div>
+            <div class="diagram-title">Diagram 3 — Cluster Node Pools & Namespace Layout</div>
+            <div class="diagram-subtitle">How namespaces map to node pools within a single AKS cluster</div>
+          </div>
+          <div class="diagram-actions">
+            <button class="btn" onclick="copyDiagram('mmd3',this)">📋 Copy Mermaid</button>
+            <button class="btn btn-blue" onclick="downloadMmd('diagram-3-cluster-namespaces','mmd3')">⬇ Download .mmd</button>
+          </div>
+        </div>
+        <div class="cf-hint"><span>💡</span><span><strong>Confluence:</strong> Type <code>/mermaid</code> and paste.</span></div>
+        <div class="code-area"><pre id="mmd3">graph TB
+    classDef sys fill:#E3FCEF,stroke:#006644,color:#006644
+    classDef plat fill:#DEEBFF,stroke:#0052CC,color:#0747A6
+    classDef app fill:#EAE6FF,stroke:#403294,color:#403294
+    classDef daemon fill:#FFFAE6,stroke:#FF8B00,color:#172B4D
+    classDef pool fill:#F4F5F7,stroke:#C1C7D0,color:#172B4D
+
+    subgraph CLUSTER["AKS CLUSTER"]
+        direction LR
+
+        subgraph SYS_POOL["System Node Pool\nCore K8s only  —  always on"]
+            NS_KUBE["kube-system\nCoreDNS\nkube-proxy\ncloud-node-manager"]:::sys
+        end
+
+        subgraph PLAT_POOL["Platform Node Pool\nShared operators  —  fixed size"]
+            NS_KYV["kyverno\nPolicy Engine"]:::plat
+            NS_IST["istio-system\nService Mesh"]:::plat
+            NS_CERT["cert-manager\nTLS Certs"]:::plat
+            NS_MON["monitoring\nPrometheus\nAlertmanager"]:::plat
+            NS_RMQ["rabbitmq-system\nMessage Broker"]:::plat
+            NS_OT["opentelemetry\nOTel Collector"]:::plat
+            NS_JAE["jaeger\nTracing UI"]:::plat
+            NS_KEDA["keda\nAutoscaler"]:::plat
+            NS_CSI["secrets-store-csi\nAKV Driver"]:::plat
+            NS_LOG["logging\nFluent Bit\n(DaemonSet — all nodes)"]:::daemon
+        end
+
+        subgraph APP_POOL["Application Node Pool\nWorkloads  —  KEDA autoscaled"]
+            NS_APP1["app-sandbox"]:::app
+            NS_APP2["app-dev"]:::app
+            NS_APP3["app-intgtest"]:::app
+            NS_APP4["app-systest"]:::app
+            NS_APP5["app-uat"]:::app
+            NS_APP6["app-prod"]:::app
+        end
+    end
+
+    NS_KYV -->|"Validates all pods"| APP_POOL
+    NS_IST -.->|"mTLS sidecar injection"| APP_POOL
+    NS_RMQ -->|"Queue depth triggers"| NS_KEDA
+    NS_KEDA -->|"Scales pods"| APP_POOL
+    NS_CSI -.->|"Secret mounts"| APP_POOL</pre></div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== ENVIRONMENTS ===== -->
+    <section class="section" id="environments">
+      <div class="section-title-row">
+        <h2>Environment Strategy</h2>
+        <div class="section-actions">
+          <button class="btn" onclick="copySection('envs-body',this)">📋 Copy</button>
+        </div>
+      </div>
+      <div id="envs-body">
+        <p>Environments are separated by Kubernetes namespace within each cluster. Each namespace is fully isolated — it has its own NetworkPolicy (default-deny, created automatically by Kyverno), its own ResourceQuota, its own RBAC bindings, and its own Workload Identity connecting to environment-specific Azure resources.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Cluster</th><th>Environment</th><th>Namespace</th><th>Purpose</th><th>Deploy trigger</th></tr></thead>
+            <tbody>
+              <tr><td rowspan="2"><code>aks-dev</code></td><td><span class="tag tag-gray">Sandbox</span></td><td><code>app-sandbox</code></td><td>Free experimentation, spike testing, quick feature demos. Lightweight — single DB replica, minimal SFTP data.</td><td>Manual or PR open</td></tr>
+              <tr><td><span class="tag tag-blue">Dev</span></td><td><code>app-dev</code></td><td>Active feature development. Connected to dev databases and dev file share. Deployed from feature branches.</td><td>Auto on feature/* PR</td></tr>
+              <tr><td rowspan="4"><code>aks-test</code></td><td><span class="tag tag-blue">IntgTest</span></td><td><code>app-intgtest</code></td><td>Integration testing — verifies service-to-service contracts and downstream dependencies.</td><td>Auto on develop merge</td></tr>
+              <tr><td><span class="tag tag-blue">SysTest</span></td><td><code>app-systest</code></td><td>Full system testing with realistic data volumes. Closest to production configuration in non-prod.</td><td>Auto on develop merge</td></tr>
+              <tr><td><span class="tag tag-amber">UAT</span></td><td><code>app-uat</code></td><td>User acceptance testing — business stakeholders validate before release sign-off.</td><td>Manual on release/* branch</td></tr>
+              <tr><td><span class="tag tag-amber">PerfTest</span></td><td><code>app-perftest</code></td><td>Performance and load testing. Namespace can scale aggressively — isolated quota to prevent cluster impact.</td><td>Manual on demand</td></tr>
+              <tr><td><code>aks-prod</code></td><td><span class="tag tag-green">Prod</span></td><td><code>app-prod</code></td><td>Production workload. Multi-AZ cluster. KEDA autoscaling. Manual approval gate required.</td><td>Manual approval on main</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Namespace Bootstrap — What the Pipeline Creates</h3>
+        <p>When a new environment namespace is created the pipeline applies these in order. Nothing is manually configured after this point.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>What</th><th>How</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Namespace with standard labels</td><td>kubectl apply — labels include environment, team, cost-centre</td></tr>
+              <tr><td>2</td><td>Default-deny NetworkPolicy</td><td>Auto-generated by Kyverno Generate policy on namespace creation</td></tr>
+              <tr><td>3</td><td>ResourceQuota and LimitRange</td><td>Applied from cluster-baseline Helm chart per environment tier</td></tr>
+              <tr><td>4</td><td>Kubernetes ServiceAccount for Workload Identity</td><td>Linked to an Azure Managed Identity via Federated Credential</td></tr>
+              <tr><td>5</td><td>SecretProviderClass</td><td>Defines which Key Vault secrets mount into pods in this namespace</td></tr>
+              <tr><td>6</td><td>RBAC RoleBindings</td><td>SPN for pipeline deploy + Entra groups for human read access</td></tr>
+              <tr><td>7</td><td>Application Helm release</td><td>Deployed by the environment-specific pipeline SPN</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DIAGRAM 4 -->
+      <div id="diag4" class="diagram-block">
+        <div class="diagram-header">
+          <div>
+            <div class="diagram-title">Diagram 4 — Environment Distribution & Resource Connections</div>
+            <div class="diagram-subtitle">Which environments run in which cluster and how they connect to Azure resources</div>
+          </div>
+          <div class="diagram-actions">
+            <button class="btn" onclick="copyDiagram('mmd4',this)">📋 Copy Mermaid</button>
+            <button class="btn btn-blue" onclick="downloadMmd('diagram-4-environment-mapping','mmd4')">⬇ Download .mmd</button>
+          </div>
+        </div>
+        <div class="cf-hint"><span>💡</span><span><strong>Confluence:</strong> Type <code>/mermaid</code> and paste.</span></div>
+        <div class="code-area"><pre id="mmd4">graph LR
+    classDef dev_env fill:#DEEBFF,stroke:#0052CC,color:#0747A6
+    classDef test_env fill:#EAE6FF,stroke:#403294,color:#403294
+    classDef prod_env fill:#E3FCEF,stroke:#006644,color:#006644
+    classDef azure fill:#F4F5F7,stroke:#C1C7D0,color:#5E6C84
+    classDef common fill:#FFFAE6,stroke:#FF8B00,color:#172B4D
+
+    subgraph DEV_CLUSTER["aks-dev  —  Dev Subscription"]
+        NS_SBX["app-sandbox"]:::dev_env
+        NS_DEV["app-dev"]:::dev_env
+    end
+
+    subgraph TEST_CLUSTER["aks-test  —  Test Subscription"]
+        NS_INT["app-intgtest"]:::test_env
+        NS_SYS["app-systest"]:::test_env
+        NS_UAT["app-uat"]:::test_env
+        NS_PERF["app-perftest"]:::test_env
+    end
+
+    subgraph PROD_CLUSTER["aks-prod  —  Prod Subscription"]
+        NS_PROD["app-prod"]:::prod_env
+    end
+
+    subgraph DEV_RES["Dev Subscription Azure Resources"]
+        DEV_ACR["ACR  devacr001\nShared by cluster"]:::common
+        DEV_AKV["Key Vault  dev-akv-001\nSecrets by env prefix"]:::common
+        RG_SBX["rg-app-sandbox\nPostgreSQL VMs\nStorage + SFTP"]:::azure
+        RG_DEV["rg-app-dev\nPostgreSQL VMs\nStorage + SFTP"]:::azure
+    end
+
+    subgraph TEST_RES["Test Subscription Azure Resources"]
+        TEST_ACR["ACR  testacr001"]:::common
+        TEST_AKV["Key Vault  test-akv-001"]:::common
+        RG_INT["rg-app-intgtest\nDB + SFTP"]:::azure
+        RG_SYS["rg-app-systest\nDB + SFTP"]:::azure
+        RG_UAT["rg-app-uat\nDB + SFTP"]:::azure
+        RG_PERF["rg-app-perftest\nDB + SFTP"]:::azure
+    end
+
+    subgraph PROD_RES["Prod Subscription Azure Resources"]
+        PROD_ACR["ACR  prodacr001"]:::common
+        PROD_AKV["Key Vault  prod-akv-001"]:::common
+        RG_PROD["rg-app-prod\nDB + SFTP  (ZRS)"]:::azure
+    end
+
+    NS_SBX --> RG_SBX
+    NS_DEV --> RG_DEV
+    DEV_CLUSTER --> DEV_ACR
+    DEV_CLUSTER --> DEV_AKV
+
+    NS_INT --> RG_INT
+    NS_SYS --> RG_SYS
+    NS_UAT --> RG_UAT
+    NS_PERF --> RG_PERF
+    TEST_CLUSTER --> TEST_ACR
+    TEST_CLUSTER --> TEST_AKV
+
+    NS_PROD --> RG_PROD
+    PROD_CLUSTER --> PROD_ACR
+    PROD_CLUSTER --> PROD_AKV</pre></div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== IDENTITY & RBAC ===== -->
+    <section class="section" id="identity">
+      <div class="section-title-row">
+        <h2>Identity & RBAC</h2>
+        <div class="section-actions">
+          <button class="btn" onclick="copySection('identity-body',this)">📋 Copy</button>
+        </div>
+      </div>
+      <div id="identity-body">
+        <p>There are three types of identity on this platform — pipeline SPNs for automation, Managed Identities for pod-to-Azure connectivity, and Entra ID groups for human access. They are kept strictly separate and scoped to the minimum required permissions.</p>
+
+        <h3>Pipeline SPNs</h3>
+        <p>Each SPN is an App Registration in the relevant tenant. One SPN per automation task — no sharing.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>SPN</th><th>Tenant</th><th>Scope</th><th>Role</th><th>Does</th></tr></thead>
+            <tbody>
+              <tr><td><code>spn-infra-{sub}</code></td><td>Per tenant</td><td>rg-common, rg-app-* in that sub</td><td><span class="tag tag-amber">Contributor</span></td><td>Provisions ACR, Key Vault, Storage Accounts, PostgreSQL VMs</td></tr>
+              <tr><td><code>spn-cluster-{sub}</code></td><td>Per tenant</td><td>rg-aks, rg-network in that sub</td><td><span class="tag tag-amber">Contributor</span> + <span class="tag tag-blue">Network Contributor</span></td><td>Provisions AKS cluster, node pools, subnet delegation</td></tr>
+              <tr><td><code>spn-image-push-{sub}</code></td><td>Per tenant</td><td>ACR resource only</td><td><span class="tag tag-green">AcrPush</span></td><td>Pushes built images to subscription ACR</td></tr>
+              <tr><td><code>spn-image-promote</code></td><td>Non-Prod → Prod</td><td>Source ACR (read) + Dest ACR (write)</td><td><span class="tag tag-green">AcrPull + AcrPush</span></td><td>Promotes approved images from lower to higher subscription ACR</td></tr>
+              <tr><td><code>spn-k8s-baseline</code></td><td>Per tenant</td><td>K8s: cluster-admin (all clusters)</td><td><span class="tag tag-red">cluster-admin</span></td><td>Installs system operators via Helm. Pipeline only — never interactive.</td></tr>
+              <tr><td><code>spn-app-{env}</code></td><td>Per tenant</td><td>K8s: namespace-deployer in that env namespace</td><td><span class="tag tag-teal">namespace-deployer</span></td><td>Deploys application Helm releases to the specific env namespace</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Managed Identities (Pod-to-Azure)</h3>
+        <p>Pods never use SPNs directly. Workload Identity federates a Kubernetes ServiceAccount to an Azure Managed Identity. This means no secrets in pods — the identity token is projected automatically and is short-lived.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Managed Identity</th><th>Scope</th><th>Role</th><th>Used by</th></tr></thead>
+            <tbody>
+              <tr><td><code>mi-aks-{sub}</code></td><td>ACR in same sub</td><td><span class="tag tag-green">AcrPull</span></td><td>AKS cluster — pulls images. Assigned manually by Cloud Team post-cluster creation.</td></tr>
+              <tr><td><code>mi-app-{env}</code></td><td>Key Vault secrets (env prefix), Storage Account</td><td><span class="tag tag-green">Key Vault Secrets User</span> + <span class="tag tag-green">Storage Blob Data Reader</span></td><td>Application pods in that env namespace. Mounted via CSI Driver and Workload Identity.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Entra ID Groups (Human Access)</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Group</th><th>K8s Role</th><th>What they can do</th></tr></thead>
+            <tbody>
+              <tr><td><code>grp-platform-engineers</code></td><td><span class="tag tag-red">platform-admin ClusterRole</span></td><td>Read everything, write to system namespaces, manage RBAC. Cannot deploy application code — that goes through the pipeline.</td></tr>
+              <tr><td><code>grp-dev-team</code></td><td><span class="tag tag-blue">namespace-readonly (all app-* ns)</span></td><td>Read pods, logs, events in dev and test workload namespaces. No access to system namespaces or prod.</td></tr>
+              <tr><td><code>grp-ops-readonly</code></td><td><span class="tag tag-blue">cluster-readonly ClusterRole</span></td><td>Read everything across all namespaces. No write access of any kind.</td></tr>
+              <tr><td><code>grp-security-audit</code></td><td><span class="tag tag-purple">audit-viewer ClusterRole</span></td><td>Read Kyverno policy reports, events, and audit logs. Used for compliance evidence gathering.</td></tr>
+              <tr><td><code>grp-breakglass</code></td><td><span class="tag tag-red">cluster-admin (time-limited)</span></td><td>Emergency only. PAM-gated, dual approval, session recorded, auto-revoked after 4 hours.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel panel-warn">
+          <div class="panel-title">Role assignment constraint</div>
+          The Landing Zone policy prevents any SPN from assigning Azure roles. The AcrPull assignment from the AKS cluster Managed Identity to ACR must be raised as a Cloud Team request after each cluster is provisioned. Build this into the cluster provisioning runbook as a mandatory step.
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== ENV RESOURCE MAP ===== -->
+    <section class="section" id="env-map">
+      <div class="section-title-row">
+        <h2>Environment Resource Map</h2>
+        <div class="section-actions">
+          <button class="btn" onclick="copySection('envmap-body',this)">📋 Copy</button>
+        </div>
+      </div>
+      <div id="envmap-body">
+        <p>Each environment is wired to its own dedicated Azure resources. A pod in <code>app-sandbox</code> can only reach sandbox databases and the sandbox file share — it cannot reach dev or test resources. This is enforced by NetworkPolicy, by the Workload Identity scope, and by Key Vault secret naming.</p>
+
+        <div class="env-strip">
+          <div class="env-strip-header"><span class="tag tag-gray">Sandbox</span><span class="env-strip-name">Sandbox</span><span class="env-strip-sub">aks-dev · app-sandbox</span></div>
+          <div class="env-cells">
+            <div class="env-cell"><div class="env-cell-label">Namespace</div><div class="env-cell-val">app-sandbox</div></div>
+            <div class="env-cell"><div class="env-cell-label">Resource Group</div><div class="env-cell-val">rg-app-sandbox</div></div>
+            <div class="env-cell"><div class="env-cell-label">ACR</div><div class="env-cell-val">devacr001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Key Vault prefix</div><div class="env-cell-val">sandbox-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">PostgreSQL VMs</div><div class="env-cell-val">vm-pg-sandbox-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">Storage / SFTP</div><div class="env-cell-val">sandboxsa001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Managed Identity</div><div class="env-cell-val">mi-app-sandbox</div></div>
+          </div>
+        </div>
+
+        <div class="env-strip">
+          <div class="env-strip-header"><span class="tag tag-blue">Dev</span><span class="env-strip-name">Development</span><span class="env-strip-sub">aks-dev · app-dev</span></div>
+          <div class="env-cells">
+            <div class="env-cell"><div class="env-cell-label">Namespace</div><div class="env-cell-val">app-dev</div></div>
+            <div class="env-cell"><div class="env-cell-label">Resource Group</div><div class="env-cell-val">rg-app-dev</div></div>
+            <div class="env-cell"><div class="env-cell-label">ACR</div><div class="env-cell-val">devacr001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Key Vault prefix</div><div class="env-cell-val">dev-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">PostgreSQL VMs</div><div class="env-cell-val">vm-pg-dev-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">Storage / SFTP</div><div class="env-cell-val">devsa001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Managed Identity</div><div class="env-cell-val">mi-app-dev</div></div>
+          </div>
+        </div>
+
+        <div class="env-strip">
+          <div class="env-strip-header"><span class="tag tag-blue">IntgTest</span><span class="env-strip-name">Integration Test</span><span class="env-strip-sub">aks-test · app-intgtest</span></div>
+          <div class="env-cells">
+            <div class="env-cell"><div class="env-cell-label">Namespace</div><div class="env-cell-val">app-intgtest</div></div>
+            <div class="env-cell"><div class="env-cell-label">Resource Group</div><div class="env-cell-val">rg-app-intgtest</div></div>
+            <div class="env-cell"><div class="env-cell-label">ACR</div><div class="env-cell-val">testacr001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Key Vault prefix</div><div class="env-cell-val">intgtest-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">PostgreSQL VMs</div><div class="env-cell-val">vm-pg-intgtest-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">Storage / SFTP</div><div class="env-cell-val">intgtestsa001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Managed Identity</div><div class="env-cell-val">mi-app-intgtest</div></div>
+          </div>
+        </div>
+
+        <div class="env-strip">
+          <div class="env-strip-header"><span class="tag tag-blue">SysTest</span><span class="env-strip-name">System Test</span><span class="env-strip-sub">aks-test · app-systest</span></div>
+          <div class="env-cells">
+            <div class="env-cell"><div class="env-cell-label">Namespace</div><div class="env-cell-val">app-systest</div></div>
+            <div class="env-cell"><div class="env-cell-label">Resource Group</div><div class="env-cell-val">rg-app-systest</div></div>
+            <div class="env-cell"><div class="env-cell-label">ACR</div><div class="env-cell-val">testacr001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Key Vault prefix</div><div class="env-cell-val">systest-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">PostgreSQL VMs</div><div class="env-cell-val">vm-pg-systest-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">Storage / SFTP</div><div class="env-cell-val">systestsa001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Managed Identity</div><div class="env-cell-val">mi-app-systest</div></div>
+          </div>
+        </div>
+
+        <div class="env-strip">
+          <div class="env-strip-header"><span class="tag tag-amber">UAT</span><span class="env-strip-name">User Acceptance Test</span><span class="env-strip-sub">aks-test · app-uat</span></div>
+          <div class="env-cells">
+            <div class="env-cell"><div class="env-cell-label">Namespace</div><div class="env-cell-val">app-uat</div></div>
+            <div class="env-cell"><div class="env-cell-label">Resource Group</div><div class="env-cell-val">rg-app-uat</div></div>
+            <div class="env-cell"><div class="env-cell-label">ACR</div><div class="env-cell-val">testacr001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Key Vault prefix</div><div class="env-cell-val">uat-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">PostgreSQL VMs</div><div class="env-cell-val">vm-pg-uat-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">Storage / SFTP</div><div class="env-cell-val">uatsa001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Managed Identity</div><div class="env-cell-val">mi-app-uat</div></div>
+          </div>
+        </div>
+
+        <div class="env-strip">
+          <div class="env-strip-header"><span class="tag tag-amber">PerfTest</span><span class="env-strip-name">Performance Test</span><span class="env-strip-sub">aks-test · app-perftest</span></div>
+          <div class="env-cells">
+            <div class="env-cell"><div class="env-cell-label">Namespace</div><div class="env-cell-val">app-perftest</div></div>
+            <div class="env-cell"><div class="env-cell-label">Resource Group</div><div class="env-cell-val">rg-app-perftest</div></div>
+            <div class="env-cell"><div class="env-cell-label">ACR</div><div class="env-cell-val">testacr001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Key Vault prefix</div><div class="env-cell-val">perftest-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">PostgreSQL VMs</div><div class="env-cell-val">vm-pg-perftest-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">Storage / SFTP</div><div class="env-cell-val">perftestsa001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Managed Identity</div><div class="env-cell-val">mi-app-perftest</div></div>
+          </div>
+        </div>
+
+        <div class="env-strip" style="border-color:#ABF5D1">
+          <div class="env-strip-header" style="background:#E3FCEF"><span class="tag tag-green">Prod</span><span class="env-strip-name">Production</span><span class="env-strip-sub">aks-prod · app-prod · Multi-AZ HA</span></div>
+          <div class="env-cells">
+            <div class="env-cell"><div class="env-cell-label">Namespace</div><div class="env-cell-val">app-prod</div></div>
+            <div class="env-cell"><div class="env-cell-label">Resource Group</div><div class="env-cell-val">rg-app-prod</div></div>
+            <div class="env-cell"><div class="env-cell-label">ACR</div><div class="env-cell-val">prodacr001</div></div>
+            <div class="env-cell"><div class="env-cell-label">Key Vault prefix</div><div class="env-cell-val">prod-* (prod-akv-001)</div></div>
+            <div class="env-cell"><div class="env-cell-label">PostgreSQL VMs</div><div class="env-cell-val">vm-pg-prod-*</div></div>
+            <div class="env-cell"><div class="env-cell-label">Storage / SFTP</div><div class="env-cell-val">prodsa001 (ZRS)</div></div>
+            <div class="env-cell"><div class="env-cell-label">Managed Identity</div><div class="env-cell-val">mi-app-prod</div></div>
+            <div class="env-cell"><div class="env-cell-label">Autoscaling</div><div class="env-cell-val">KEDA on RabbitMQ</div></div>
+            <div class="env-cell"><div class="env-cell-label">Deploy gate</div><div class="env-cell-val">Manual approval required</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="footer">
+  <span>AKS Platform Infrastructure Organisation · Internal — Restricted · v1.0 Draft</span>
+  <span>Azure New Zealand North · Platform Engineering</span>
+</footer>
+
+<a href="#" id="top-btn" title="Back to top">↑</a>
+
+<script>
+function copyDiagram(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function downloadMmd(filename, id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const blob = new Blob([el.textContent.trim()], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename + '.mmd';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function copySection(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.innerText).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2500);
+  });
+}
+
+const topBtn = document.getElementById('top-btn');
+window.addEventListener('scroll', () => topBtn.classList.toggle('visible', window.scrollY > 400));
+topBtn.addEventListener('click', e => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+const sections = document.querySelectorAll('.section[id]');
+const links = document.querySelectorAll('.sb-links a');
+new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector('.sb-links a[href="#' + e.target.id + '"]');
+      if (a) a.classList.add('active');
+    }
+  });
+}, { rootMargin: '-15% 0px -75% 0px' }).observe && sections.forEach(s => {
+  new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector('.sb-links a[href="#' + e.target.id + '"]');
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' }).observe(s);
+});
+</script>
+</body>
+</html>
